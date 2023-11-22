@@ -16,6 +16,7 @@ import { fieldSpacingContainerStyle } from '../../../../utils/field';
 import { insertNode } from '../../../../utils/store';
 import SelectField from '../../../../components/fields/SelectField';
 import DateTimePickerField from '../../../../components/DateTimePickerField';
+import { useSchemaCreationValidation, useMandatorySchemaAttributes } from '../../../../utils/hooks/useSchemaAttributes';
 
 export const BASIC_AUTH = 'basic';
 export const CERT_AUTH = 'certificate';
@@ -39,27 +40,35 @@ const IngestionTaxiiCreationMutation = graphql`
   }
 `;
 
-const ingestionTaxiiCreationValidation = (t) => Yup.object().shape({
-  name: Yup.string().required(t('This field is required')),
-  description: Yup.string().nullable(),
-  uri: Yup.string().required(t('This field is required')),
-  version: Yup.string().required(t('This field is required')),
-  collection: Yup.string().required(t('This field is required')),
-  authentication_type: Yup.string().required(t('This field is required')),
-  authentication_value: Yup.string().nullable(),
-  username: Yup.string().nullable(),
-  password: Yup.string().nullable(),
-  cert: Yup.string().nullable(),
-  key: Yup.string().nullable(),
-  ca: Yup.string().nullable(),
-  user_id: Yup.object().nullable(),
-  added_after_start: Yup.date()
-    .typeError(t('The value must be a datetime (yyyy-MM-dd hh:mm (a|p)m)'))
-    .nullable(),
-});
+const OBJECT_TYPE = 'IngestionTaxii';
 
 const IngestionTaxiiCreation = (props) => {
   const { t, classes } = props;
+
+  const basicShape = {
+    name: Yup.string(),
+    description: Yup.string().nullable(),
+    uri: Yup.string(),
+    version: Yup.string(),
+    collection: Yup.string(),
+    authentication_type: Yup.string(),
+    authentication_value: Yup.string().nullable(),
+    username: Yup.string().nullable(),
+    password: Yup.string().nullable(),
+    cert: Yup.string().nullable(),
+    key: Yup.string().nullable(),
+    ca: Yup.string().nullable(),
+    user_id: Yup.object().nullable(),
+    added_after_start: Yup.date()
+      .typeError(t('The value must be a datetime (yyyy-MM-dd hh:mm (a|p)m)'))
+      .nullable(),
+  };
+  const mandatoryAttributes = useMandatorySchemaAttributes(OBJECT_TYPE);
+  const validator = useSchemaCreationValidation(
+    OBJECT_TYPE,
+    basicShape,
+  );
+
   const onSubmit = (values, { setSubmitting, resetForm }) => {
     let authentifcationValue = values.authentication_value;
     if (values.authentication_type === BASIC_AUTH) {
@@ -122,7 +131,7 @@ const IngestionTaxiiCreation = (props) => {
             key: '',
             ca: '',
           }}
-          validationSchema={ingestionTaxiiCreationValidation(t)}
+          validationSchema={validator}
           onSubmit={onSubmit}
           onReset={onClose}
         >
@@ -133,6 +142,7 @@ const IngestionTaxiiCreation = (props) => {
                 variant="standard"
                 name="name"
                 label={t('Name')}
+                required={(mandatoryAttributes.includes('name'))}
                 fullWidth={true}
               />
               <Field
@@ -140,6 +150,7 @@ const IngestionTaxiiCreation = (props) => {
                 variant="standard"
                 name="description"
                 label={t('Description')}
+                required={(mandatoryAttributes.includes('description'))}
                 fullWidth={true}
                 style={fieldSpacingContainerStyle}
               />
@@ -148,6 +159,7 @@ const IngestionTaxiiCreation = (props) => {
                 variant="standard"
                 name="uri"
                 label={t('TAXII server URL')}
+                required={(mandatoryAttributes.includes('uri'))}
                 fullWidth={true}
                 style={fieldSpacingContainerStyle}
               />
@@ -156,6 +168,7 @@ const IngestionTaxiiCreation = (props) => {
                 variant="standard"
                 name="version"
                 label={t('TAXII version')}
+                required={(mandatoryAttributes.includes('version'))}
                 fullWidth={true}
                 containerstyle={{
                   width: '100%',
@@ -175,6 +188,7 @@ const IngestionTaxiiCreation = (props) => {
                 variant="standard"
                 name="collection"
                 label={t('TAXII Collection')}
+                required={(mandatoryAttributes.includes('collection'))}
                 fullWidth={true}
                 style={fieldSpacingContainerStyle}
               />
@@ -183,6 +197,7 @@ const IngestionTaxiiCreation = (props) => {
                 variant="standard"
                 name="authentication_type"
                 label={t('Authentication type')}
+                required={(mandatoryAttributes.includes('authentication_type'))}
                 fullWidth={true}
                 containerstyle={{
                   width: '100%',
@@ -205,6 +220,7 @@ const IngestionTaxiiCreation = (props) => {
                     variant="standard"
                     name="username"
                     label={t('Username')}
+                    required={(mandatoryAttributes.includes('username'))}
                     fullWidth={true}
                     style={fieldSpacingContainerStyle}
                   />
@@ -213,6 +229,7 @@ const IngestionTaxiiCreation = (props) => {
                     variant="standard"
                     name="password"
                     label={t('Password')}
+                    required={(mandatoryAttributes.includes('password'))}
                     fullWidth={true}
                     style={fieldSpacingContainerStyle}
                   />
@@ -224,6 +241,7 @@ const IngestionTaxiiCreation = (props) => {
                   variant="standard"
                   name="authentication_value"
                   label={t('Token')}
+                  required={(mandatoryAttributes.includes('authentication_value'))}
                   fullWidth={true}
                   style={fieldSpacingContainerStyle}
                 />
@@ -235,6 +253,7 @@ const IngestionTaxiiCreation = (props) => {
                     variant="standard"
                     name="cert"
                     label={t('Certificate (base64)')}
+                    required={(mandatoryAttributes.includes('cert'))}
                     fullWidth={true}
                     style={fieldSpacingContainerStyle}
                   />
@@ -243,6 +262,7 @@ const IngestionTaxiiCreation = (props) => {
                     variant="standard"
                     name="key"
                     label={t('Key (base64)')}
+                    required={(mandatoryAttributes.includes('key'))}
                     fullWidth={true}
                     style={fieldSpacingContainerStyle}
                   />
@@ -251,6 +271,7 @@ const IngestionTaxiiCreation = (props) => {
                     variant="standard"
                     name="ca"
                     label={t('CA certificate (base64)')}
+                    required={(mandatoryAttributes.includes('ca'))}
                     fullWidth={true}
                     style={fieldSpacingContainerStyle}
                   />
@@ -261,6 +282,7 @@ const IngestionTaxiiCreation = (props) => {
                 label={t(
                   'User responsible for data creation (empty = System)',
                 )}
+                required={(mandatoryAttributes.includes('user_id'))}
                 containerStyle={fieldSpacingContainerStyle}
               />
               <Field
@@ -274,6 +296,7 @@ const IngestionTaxiiCreation = (props) => {
                   fullWidth: true,
                   style: { marginTop: 20 },
                 }}
+                required={(mandatoryAttributes.includes('added_after_start'))}
               />
               <div className={classes.buttons}>
                 <Button

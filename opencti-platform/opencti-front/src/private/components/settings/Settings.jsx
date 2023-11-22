@@ -30,6 +30,7 @@ import SettingsAnalytics from './settings_analytics/SettingsAnalytics';
 import ItemBoolean from '../../../components/ItemBoolean';
 import { availableLanguage } from '../../../components/AppIntlProvider';
 import Breadcrumbs from '../../../components/Breadcrumbs';
+import { useSchemaCreationValidation, useMandatorySchemaAttributes } from '../../../utils/hooks/useSchemaAttributes';
 
 // Deprecated - https://mui.com/system/styles/basics/
 // Do not use it for new code.
@@ -165,43 +166,50 @@ const settingsFocus = graphql`
   }
 `;
 
-const settingsValidation = (t) => Yup.object().shape({
-  platform_title: Yup.string().required(t('This field is required')),
-  platform_favicon: Yup.string().nullable(),
-  platform_email: Yup.string()
-    .required(t('This field is required'))
-    .email(t('The value must be an email address')),
-  platform_theme: Yup.string().nullable(),
-  platform_theme_dark_background: Yup.string().nullable(),
-  platform_theme_dark_paper: Yup.string().nullable(),
-  platform_theme_dark_nav: Yup.string().nullable(),
-  platform_theme_dark_primary: Yup.string().nullable(),
-  platform_theme_dark_secondary: Yup.string().nullable(),
-  platform_theme_dark_accent: Yup.string().nullable(),
-  platform_theme_dark_logo: Yup.string().nullable(),
-  platform_theme_dark_logo_collapsed: Yup.string().nullable(),
-  platform_theme_dark_logo_login: Yup.string().nullable(),
-  platform_theme_light_background: Yup.string().nullable(),
-  platform_theme_light_paper: Yup.string().nullable(),
-  platform_theme_light_nav: Yup.string().nullable(),
-  platform_theme_light_primary: Yup.string().nullable(),
-  platform_theme_light_secondary: Yup.string().nullable(),
-  platform_theme_light_accent: Yup.string().nullable(),
-  platform_theme_light_logo: Yup.string().nullable(),
-  platform_theme_light_logo_collapsed: Yup.string().nullable(),
-  platform_theme_light_logo_login: Yup.string().nullable(),
-  platform_language: Yup.string().nullable(),
-  platform_whitemark: Yup.string().nullable(),
-  enterprise_edition: Yup.string().nullable(),
-  platform_login_message: Yup.string().nullable(),
-  platform_banner_text: Yup.string().nullable(),
-  platform_banner_level: Yup.string().nullable(),
-  analytics_google_analytics_v4: Yup.string().nullable(),
-});
+const OBJECT_TYPE = 'Settings';
 
 const Settings = () => {
   const classes = useStyles();
   const { t_i18n } = useFormatter();
+
+  const mandatoryAttributes = useMandatorySchemaAttributes(OBJECT_TYPE);
+  const basicShape = {
+    platform_title: Yup.string(),
+    platform_favicon: Yup.string().nullable(),
+    platform_email: Yup.string()
+      .email(t_i18n('The value must be an email address')),
+    platform_theme: Yup.string().nullable(),
+    platform_theme_dark_background: Yup.string().nullable(),
+    platform_theme_dark_paper: Yup.string().nullable(),
+    platform_theme_dark_nav: Yup.string().nullable(),
+    platform_theme_dark_primary: Yup.string().nullable(),
+    platform_theme_dark_secondary: Yup.string().nullable(),
+    platform_theme_dark_accent: Yup.string().nullable(),
+    platform_theme_dark_logo: Yup.string().nullable(),
+    platform_theme_dark_logo_collapsed: Yup.string().nullable(),
+    platform_theme_dark_logo_login: Yup.string().nullable(),
+    platform_theme_light_background: Yup.string().nullable(),
+    platform_theme_light_paper: Yup.string().nullable(),
+    platform_theme_light_nav: Yup.string().nullable(),
+    platform_theme_light_primary: Yup.string().nullable(),
+    platform_theme_light_secondary: Yup.string().nullable(),
+    platform_theme_light_accent: Yup.string().nullable(),
+    platform_theme_light_logo: Yup.string().nullable(),
+    platform_theme_light_logo_collapsed: Yup.string().nullable(),
+    platform_theme_light_logo_login: Yup.string().nullable(),
+    platform_language: Yup.string().nullable(),
+    platform_whitemark: Yup.string().nullable(),
+    enterprise_edition: Yup.string().nullable(),
+    platform_login_message: Yup.string().nullable(),
+    platform_banner_text: Yup.string().nullable(),
+    platform_banner_level: Yup.string().nullable(),
+    analytics_google_analytics_v4: Yup.string().nullable(),
+  };
+  const validator = useSchemaCreationValidation(
+    OBJECT_TYPE,
+    basicShape,
+  );
+
   const handleChangeFocus = (id, name) => {
     commitMutation({
       mutation: settingsFocus,
@@ -240,7 +248,7 @@ const Settings = () => {
         finalValue = '#000000';
       }
     }
-    settingsValidation(t_i18n)
+    validator
       .validateAt(name, { [name]: finalValue })
       .then(() => {
         commitMutation({
@@ -312,7 +320,7 @@ const Settings = () => {
                         onSubmit={() => {}}
                         enableReinitialize={true}
                         initialValues={initialValues}
-                        validationSchema={settingsValidation(t_i18n)}
+                        validationSchema={validator}
                       >
                         {() => (
                           <Form>
@@ -321,6 +329,7 @@ const Settings = () => {
                               variant="standard"
                               name="platform_title"
                               label={t_i18n('Platform title')}
+                              required={(mandatoryAttributes.includes('platform_title'))}
                               fullWidth
                               onFocus={(name) => handleChangeFocus(id, name)}
                               onSubmit={(name, value) => handleSubmitField(id, name, value)
@@ -337,6 +346,7 @@ const Settings = () => {
                               variant="standard"
                               name="platform_favicon"
                               label={t_i18n('Platform favicon URL')}
+                              required={(mandatoryAttributes.includes('platform_favicon'))}
                               fullWidth
                               style={{ marginTop: 20 }}
                               onFocus={(name) => handleChangeFocus(id, name)}
@@ -354,6 +364,7 @@ const Settings = () => {
                               variant="standard"
                               name="platform_email"
                               label={t_i18n('Sender email address')}
+                              required={(mandatoryAttributes.includes('platform_email'))}
                               fullWidth
                               style={{ marginTop: 20 }}
                               onFocus={(name) => handleChangeFocus(id, name)}
@@ -371,6 +382,7 @@ const Settings = () => {
                               variant="standard"
                               name="platform_theme"
                               label={t_i18n('Theme')}
+                              required={(mandatoryAttributes.includes('platform_theme'))}
                               fullWidth
                               containerstyle={fieldSpacingContainerStyle}
                               onFocus={(name) => handleChangeFocus(id, name)}
@@ -391,6 +403,7 @@ const Settings = () => {
                               variant="standard"
                               name="platform_language"
                               label={t_i18n('Language')}
+                              required={(mandatoryAttributes.includes('platform_language'))}
                               fullWidth
                               containerstyle={fieldSpacingContainerStyle}
                               onFocus={(name) => handleChangeFocus(id, name)}
@@ -440,7 +453,7 @@ const Settings = () => {
                         onSubmit={() => {}}
                         enableReinitialize={true}
                         initialValues={initialValues}
-                        validationSchema={settingsValidation(t_i18n)}
+                        validationSchema={validator}
                       >
                         {() => (
                           <Form>
@@ -514,6 +527,7 @@ const Settings = () => {
                                   disabled={true}
                                   name="filigran_support_key"
                                   label={t_i18n('Filigran support key')}
+                                  required={(mandatoryAttributes.includes('filigran_support_key'))}
                                   fullWidth={true}
                                 />
                               </ListItem>
@@ -530,6 +544,7 @@ const Settings = () => {
                                   component={Switch}
                                   variant="standard"
                                   name="platform_whitemark"
+                                  required={(mandatoryAttributes.includes('platform_whitemark'))}
                                   disabled={!isEnterpriseEdition}
                                   checked={
                                     settings.platform_whitemark
@@ -569,7 +584,7 @@ const Settings = () => {
                         onSubmit={() => {}}
                         enableReinitialize={true}
                         initialValues={initialValues}
-                        validationSchema={settingsValidation(t_i18n)}
+                        validationSchema={validator}
                       >
                         {() => (
                           <Form>
@@ -577,6 +592,7 @@ const Settings = () => {
                               component={ColorPickerField}
                               name="platform_theme_dark_background"
                               label={t_i18n('Background color')}
+                              required={(mandatoryAttributes.includes('platform_theme_dark_background'))}
                               placeholder={t_i18n('Default')}
                               InputLabelProps={{
                                 shrink: true,
@@ -597,6 +613,7 @@ const Settings = () => {
                               component={ColorPickerField}
                               name="platform_theme_dark_paper"
                               label={t_i18n('Paper color')}
+                              required={(mandatoryAttributes.includes('platform_theme_dark_paper'))}
                               placeholder={t_i18n('Default')}
                               InputLabelProps={{
                                 shrink: true,
@@ -618,6 +635,7 @@ const Settings = () => {
                               component={ColorPickerField}
                               name="platform_theme_dark_nav"
                               label={t_i18n('Navigation color')}
+                              required={(mandatoryAttributes.includes('platform_theme_dark_nav'))}
                               placeholder={t_i18n('Default')}
                               InputLabelProps={{
                                 shrink: true,
@@ -639,6 +657,7 @@ const Settings = () => {
                               component={ColorPickerField}
                               name="platform_theme_dark_primary"
                               label={t_i18n('Primary color')}
+                              required={(mandatoryAttributes.includes('platform_theme_dark_primary'))}
                               placeholder={t_i18n('Default')}
                               InputLabelProps={{
                                 shrink: true,
@@ -660,6 +679,7 @@ const Settings = () => {
                               component={ColorPickerField}
                               name="platform_theme_dark_secondary"
                               label={t_i18n('Secondary color')}
+                              required={(mandatoryAttributes.includes('platform_theme_dark_secondary'))}
                               placeholder={t_i18n('Default')}
                               InputLabelProps={{
                                 shrink: true,
@@ -681,6 +701,7 @@ const Settings = () => {
                               component={ColorPickerField}
                               name="platform_theme_dark_accent"
                               label={t_i18n('Accent color')}
+                              required={(mandatoryAttributes.includes('platform_theme_dark_accent'))}
                               placeholder={t_i18n('Default')}
                               InputLabelProps={{
                                 shrink: true,
@@ -703,6 +724,7 @@ const Settings = () => {
                               variant="standard"
                               name="platform_theme_dark_logo"
                               label={t_i18n('Logo URL')}
+                              required={(mandatoryAttributes.includes('platform_theme_dark_logo'))}
                               placeholder={t_i18n('Default')}
                               InputLabelProps={{
                                 shrink: true,
@@ -724,6 +746,7 @@ const Settings = () => {
                               variant="standard"
                               name="platform_theme_dark_logo_collapsed"
                               label={t_i18n('Logo URL (collapsed)')}
+                              required={(mandatoryAttributes.includes('platform_theme_dark_logo_collapsed'))}
                               placeholder={t_i18n('Default')}
                               InputLabelProps={{
                                 shrink: true,
@@ -745,6 +768,7 @@ const Settings = () => {
                               variant="standard"
                               name="platform_theme_dark_logo_login"
                               label={t_i18n('Logo URL (login)')}
+                              required={(mandatoryAttributes.includes('platform_theme_dark_logo_login'))}
                               placeholder={t_i18n('Default')}
                               InputLabelProps={{
                                 shrink: true,
@@ -775,7 +799,7 @@ const Settings = () => {
                         onSubmit={() => {}}
                         enableReinitialize={true}
                         initialValues={initialValues}
-                        validationSchema={settingsValidation(t_i18n)}
+                        validationSchema={validator}
                       >
                         {() => (
                           <Form>
@@ -783,6 +807,7 @@ const Settings = () => {
                               component={ColorPickerField}
                               name="platform_theme_light_background"
                               label={t_i18n('Background color')}
+                              required={(mandatoryAttributes.includes('platform_theme_light_background'))}
                               placeholder={t_i18n('Default')}
                               InputLabelProps={{
                                 shrink: true,
@@ -803,6 +828,7 @@ const Settings = () => {
                               component={ColorPickerField}
                               name="platform_theme_light_paper"
                               label={t_i18n('Paper color')}
+                              required={(mandatoryAttributes.includes('platform_theme_light_paper'))}
                               placeholder={t_i18n('Default')}
                               InputLabelProps={{
                                 shrink: true,
@@ -824,6 +850,7 @@ const Settings = () => {
                               component={ColorPickerField}
                               name="platform_theme_light_nav"
                               label={t_i18n('Navigation color')}
+                              required={(mandatoryAttributes.includes('platform_theme_light_nav'))}
                               placeholder={t_i18n('Default')}
                               InputLabelProps={{
                                 shrink: true,
@@ -845,6 +872,7 @@ const Settings = () => {
                               component={ColorPickerField}
                               name="platform_theme_light_primary"
                               label={t_i18n('Primary color')}
+                              required={(mandatoryAttributes.includes('platform_theme_light_primary'))}
                               placeholder={t_i18n('Default')}
                               InputLabelProps={{
                                 shrink: true,
@@ -866,6 +894,7 @@ const Settings = () => {
                               component={ColorPickerField}
                               name="platform_theme_light_secondary"
                               label={t_i18n('Secondary color')}
+                              required={(mandatoryAttributes.includes('platform_theme_light_secondary'))}
                               placeholder={t_i18n('Default')}
                               InputLabelProps={{
                                 shrink: true,
@@ -887,6 +916,7 @@ const Settings = () => {
                               component={ColorPickerField}
                               name="platform_theme_light_accent"
                               label={t_i18n('Accent color')}
+                              required={(mandatoryAttributes.includes('platform_theme_light_accent'))}
                               placeholder={t_i18n('Default')}
                               InputLabelProps={{
                                 shrink: true,
@@ -909,6 +939,7 @@ const Settings = () => {
                               variant="standard"
                               name="platform_theme_light_logo"
                               label={t_i18n('Logo URL')}
+                              required={(mandatoryAttributes.includes('platform_theme_light_logo'))}
                               placeholder={t_i18n('Default')}
                               InputLabelProps={{
                                 shrink: true,
@@ -930,6 +961,7 @@ const Settings = () => {
                               variant="standard"
                               name="platform_theme_light_logo_collapsed"
                               label={t_i18n('Logo URL (collapsed)')}
+                              required={(mandatoryAttributes.includes('platform_theme_light_logo_collapsed'))}
                               placeholder={t_i18n('Default')}
                               InputLabelProps={{
                                 shrink: true,
@@ -951,6 +983,7 @@ const Settings = () => {
                               variant="standard"
                               name="platform_theme_light_logo_login"
                               label={t_i18n('Logo URL (login)')}
+                              required={(mandatoryAttributes.includes('platform_theme_light_logo_login'))}
                               placeholder={t_i18n('Default')}
                               InputLabelProps={{
                                 shrink: true,

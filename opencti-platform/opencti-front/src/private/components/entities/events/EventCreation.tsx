@@ -20,7 +20,7 @@ import DateTimePickerField from '../../../../components/DateTimePickerField';
 import OpenVocabField from '../../common/form/OpenVocabField';
 import { fieldSpacingContainerStyle } from '../../../../utils/field';
 import ObjectLabelField from '../../common/form/ObjectLabelField';
-import { useSchemaCreationValidation } from '../../../../utils/hooks/useEntitySettings';
+import { useSchemaCreationValidation, useIsMandatoryAttribute } from '../../../../utils/hooks/useEntitySettings';
 import { insertNode } from '../../../../utils/store';
 import type { Theme } from '../../../../components/Theme';
 import { Option } from '../../common/form/ReferenceField';
@@ -92,8 +92,11 @@ export const EventCreationForm: FunctionComponent<EventFormProps> = ({
 }) => {
   const classes = useStyles();
   const { t_i18n } = useFormatter();
+  const { mandatoryAttributes } = useIsMandatoryAttribute(
+    EVENT_TYPE,
+  );
   const basicShape = {
-    name: Yup.string().trim().min(2).required(t_i18n('This field is required')),
+    name: Yup.string().trim().min(2),
     description: Yup.string().nullable(),
     confidence: Yup.number().nullable(),
     event_types: Yup.array().nullable(),
@@ -177,6 +180,7 @@ export const EventCreationForm: FunctionComponent<EventFormProps> = ({
             variant="standard"
             name="name"
             label={t_i18n('Name')}
+            required={(mandatoryAttributes.includes('name'))}
             fullWidth={true}
             detectDuplicate={['Event']}
           />
@@ -184,6 +188,7 @@ export const EventCreationForm: FunctionComponent<EventFormProps> = ({
             label={t_i18n('Event types')}
             type="event-type-ov"
             name="event_types"
+            required={(mandatoryAttributes.includes('event_types'))}
             containerStyle={fieldSpacingContainerStyle}
             multiple
             onChange={setFieldValue}
@@ -192,6 +197,7 @@ export const EventCreationForm: FunctionComponent<EventFormProps> = ({
             component={MarkdownField}
             name="description"
             label={t_i18n('Description')}
+            required={(mandatoryAttributes.includes('description'))}
             fullWidth={true}
             multiline={true}
             rows={4}
@@ -202,6 +208,7 @@ export const EventCreationForm: FunctionComponent<EventFormProps> = ({
             name="start_time"
             textFieldProps={{
               label: t_i18n('Start date'),
+              required: (mandatoryAttributes.includes('start_time')),
               variant: 'standard',
               fullWidth: true,
               style: { marginTop: 20 },
@@ -212,6 +219,7 @@ export const EventCreationForm: FunctionComponent<EventFormProps> = ({
             name="stop_time"
             textFieldProps={{
               label: t_i18n('End date'),
+              required: (mandatoryAttributes.includes('stop_time')),
               variant: 'standard',
               fullWidth: true,
               style: { marginTop: 20 },
@@ -223,22 +231,26 @@ export const EventCreationForm: FunctionComponent<EventFormProps> = ({
           />
           <CreatedByField
             name="createdBy"
+            required={(mandatoryAttributes.includes('createdBy'))}
             style={fieldSpacingContainerStyle}
             setFieldValue={setFieldValue}
           />
           <ObjectLabelField
             name="objectLabel"
+            required={(mandatoryAttributes.includes('objectLabel'))}
             style={fieldSpacingContainerStyle}
             setFieldValue={setFieldValue}
             values={values.objectLabel}
           />
           <ObjectMarkingField
             name="objectMarking"
+            required={(mandatoryAttributes.includes('objectMarking'))}
             style={fieldSpacingContainerStyle}
             setFieldValue={setFieldValue}
           />
           <ExternalReferencesField
             name="externalReferences"
+            required={(mandatoryAttributes.includes('externalReferences'))}
             style={fieldSpacingContainerStyle}
             setFieldValue={setFieldValue}
             values={values.externalReferences}

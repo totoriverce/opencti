@@ -18,7 +18,6 @@ import makeStyles from '@mui/styles/makeStyles';
 import { CsvMapperFieldSearchQuery } from '@components/common/form/__generated__/CsvMapperFieldSearchQuery.graphql';
 import { convertMapper, convertUser } from '../../../../utils/edition';
 import { useFormatter } from '../../../../components/i18n';
-import { useSchemaEditionValidation } from '../../../../utils/hooks/useEntitySettings';
 import { adaptFieldValue } from '../../../../utils/String';
 import TextField from '../../../../components/TextField';
 import { fieldSpacingContainerStyle } from '../../../../utils/field';
@@ -28,6 +27,7 @@ import type { Theme } from '../../../../components/Theme';
 import useQueryLoading from '../../../../utils/hooks/useQueryLoading';
 import Loader, { LoaderVariant } from '../../../../components/Loader';
 import useApiMutation from '../../../../utils/hooks/useApiMutation';
+import { useSchemaEditionValidation, useMandatorySchemaAttributes } from '../../../../utils/hooks/useSchemaAttributes';
 
 // Deprecated - https://mui.com/system/styles/basics/
 // Do not use it for new code.
@@ -46,7 +46,7 @@ export const ingestionCsvEditionPatch = graphql`
     ingestionCsvFieldPatch(id: $id, input: $input) {
       ...IngestionCsvEditionFragment_ingestionCsv
     }
-  } 
+  }
 `;
 
 const ingestionCsvEditionFragment = graphql`
@@ -91,20 +91,20 @@ interface IngestionCsvEditionForm {
   user_id: string | Option
 }
 
+const OBJECT_TYPE = 'IngestionCsv';
+
 const IngestionCsvEdition: FunctionComponent<IngestionCsvEditionProps> = ({
   ingestionCsv,
   handleClose,
   enableReferences = false,
 }) => {
   const { t_i18n } = useFormatter();
-  const classes = useStyles();
-  const [open, setOpen] = useState(false);
-  const ingestionCsvData = useFragment(ingestionCsvEditionFragment, ingestionCsv);
+
   const basicShape = {
-    name: Yup.string().required(t_i18n('This field is required')),
+    name: Yup.string(),
     description: Yup.string().nullable(),
-    uri: Yup.string().required(t_i18n('This field is required')),
-    authentication_type: Yup.string().required(t_i18n('This field is required')),
+    uri: Yup.string(),
+    authentication_type: Yup.string(),
     authentication_value: Yup.string().nullable(),
     current_state_date: Yup.date()
       .typeError(t_i18n('The value must be a datetime (yyyy-MM-dd hh:mm (a|p)m)'))
@@ -115,12 +115,18 @@ const IngestionCsvEdition: FunctionComponent<IngestionCsvEditionProps> = ({
     cert: Yup.string().nullable(),
     key: Yup.string().nullable(),
     ca: Yup.string().nullable(),
-    csv_mapper_id: Yup.mixed().required(t_i18n('This field is required')),
+    csv_mapper_id: Yup.mixed(),
   };
+  const mandatoryAttributes = useMandatorySchemaAttributes(OBJECT_TYPE);
+  const validator = useSchemaEditionValidation(
+    OBJECT_TYPE,
+    basicShape,
+  );
 
-  const ingestionCsvValidator = useSchemaEditionValidation('IngestionCsv', basicShape);
+  const classes = useStyles();
+  const [open, setOpen] = useState(false);
+  const ingestionCsvData = useFragment(ingestionCsvEditionFragment, ingestionCsv);
   const [commitUpdate] = useApiMutation(ingestionCsvEditionPatch);
-
   const onSubmit: FormikConfig<IngestionCsvEditionForm>['onSubmit'] = (values, { setSubmitting }) => {
     const { message, references, ...otherValues } = values;
     const commitMessage = message ?? '';
@@ -147,7 +153,7 @@ const IngestionCsvEdition: FunctionComponent<IngestionCsvEditionProps> = ({
     if (name === 'csv_mapper_id' || name === 'user_id') {
       finalValue = (value as Option).value;
     }
-    ingestionCsvValidator
+    validator
       .validateAt(name, { [name]: value })
       .then(() => {
         commitUpdate({
@@ -178,7 +184,7 @@ const IngestionCsvEdition: FunctionComponent<IngestionCsvEditionProps> = ({
     <Formik<IngestionCsvEditionForm>
       enableReinitialize={true}
       initialValues={initialValues}
-      validationSchema={ingestionCsvValidator}
+      validationSchema={validator}
       onSubmit={onSubmit}
     >
       {({
@@ -195,6 +201,7 @@ const IngestionCsvEdition: FunctionComponent<IngestionCsvEditionProps> = ({
             variant="standard"
             name="name"
             label={t_i18n('Name')}
+            required={(mandatoryAttributes.includes('name'))}
             fullWidth={true}
             onSubmit={handleSubmitField}
           />
@@ -203,6 +210,7 @@ const IngestionCsvEdition: FunctionComponent<IngestionCsvEditionProps> = ({
             variant="standard"
             name="description"
             label={t_i18n('Description')}
+            required={(mandatoryAttributes.includes('description'))}
             fullWidth={true}
             style={fieldSpacingContainerStyle}
             onSubmit={handleSubmitField}
@@ -212,6 +220,7 @@ const IngestionCsvEdition: FunctionComponent<IngestionCsvEditionProps> = ({
             variant="standard"
             name="uri"
             label={t_i18n('CSV URL')}
+            required={(mandatoryAttributes.includes('uri'))}
             fullWidth={true}
             onSubmit={handleSubmitField}
             style={fieldSpacingContainerStyle}
@@ -227,12 +236,14 @@ const IngestionCsvEdition: FunctionComponent<IngestionCsvEditionProps> = ({
               fullWidth: true,
               style: { marginTop: 20 },
             }}
+            required={(mandatoryAttributes.includes('current_state_date'))}
           />
           {
             queryRef && (
               <React.Suspense fallback={<Loader variant={LoaderVariant.inElement} />}>
                 <CsvMapperField
                   name="csv_mapper_id"
+                  required={(mandatoryAttributes.includes('csv_mapper_id'))}
                   isOptionEqualToValue={(option: Option, { value }: Option) => option.value === value}
                   onChange={handleSubmitField}
                   queryRef={queryRef}
@@ -245,6 +256,7 @@ const IngestionCsvEdition: FunctionComponent<IngestionCsvEditionProps> = ({
             variant="standard"
             name="authentication_type"
             label={t_i18n('Authentication type')}
+            required={(mandatoryAttributes.includes('authentication_type'))}
             onSubmit={handleSubmitField}
             fullWidth={true}
             containerstyle={{
@@ -266,6 +278,7 @@ const IngestionCsvEdition: FunctionComponent<IngestionCsvEditionProps> = ({
                 variant="standard"
                 name="username"
                 label={t_i18n('Username')}
+                required={(mandatoryAttributes.includes('username'))}
                 onSubmit={handleSubmitField}
                 fullWidth={true}
                 style={fieldSpacingContainerStyle}
@@ -275,6 +288,7 @@ const IngestionCsvEdition: FunctionComponent<IngestionCsvEditionProps> = ({
                 variant="standard"
                 name="password"
                 label={t_i18n('Password')}
+                required={(mandatoryAttributes.includes('password'))}
                 onSubmit={handleSubmitField}
                 fullWidth={true}
                 style={fieldSpacingContainerStyle}
@@ -287,6 +301,7 @@ const IngestionCsvEdition: FunctionComponent<IngestionCsvEditionProps> = ({
               variant="standard"
               name="authentication_value"
               label={t_i18n('Token')}
+              required={(mandatoryAttributes.includes('authentication_value'))}
               onSubmit={handleSubmitField}
               fullWidth={true}
               style={fieldSpacingContainerStyle}
@@ -299,6 +314,7 @@ const IngestionCsvEdition: FunctionComponent<IngestionCsvEditionProps> = ({
                 variant="standard"
                 name="cert"
                 label={t_i18n('Certificate (base64)')}
+                required={(mandatoryAttributes.includes('cert'))}
                 onSubmit={handleSubmitField}
                 fullWidth={true}
                 style={fieldSpacingContainerStyle}
@@ -308,6 +324,7 @@ const IngestionCsvEdition: FunctionComponent<IngestionCsvEditionProps> = ({
                 variant="standard"
                 name="key"
                 label={t_i18n('Key (base64)')}
+                required={(mandatoryAttributes.includes('key'))}
                 onSubmit={handleSubmitField}
                 fullWidth={true}
                 style={fieldSpacingContainerStyle}
@@ -317,6 +334,7 @@ const IngestionCsvEdition: FunctionComponent<IngestionCsvEditionProps> = ({
                 variant="standard"
                 name="ca"
                 label={t_i18n('CA certificate (base64)')}
+                required={(mandatoryAttributes.includes('ca'))}
                 onSubmit={handleSubmitField}
                 fullWidth={true}
                 style={fieldSpacingContainerStyle}
@@ -326,6 +344,7 @@ const IngestionCsvEdition: FunctionComponent<IngestionCsvEditionProps> = ({
           <CreatorField
             name="user_id"
             label={t_i18n('User responsible for data creation (empty = System)')}
+            required={(mandatoryAttributes.includes('user_id'))}
             isOptionEqualToValue={(option: Option, value: string) => option.value === value}
             onChange={handleSubmitField}
             containerStyle={fieldSpacingContainerStyle}

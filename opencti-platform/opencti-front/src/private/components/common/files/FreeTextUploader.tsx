@@ -157,6 +157,9 @@ const FreeTextUploader = ({ color, entityId, onUploadSuccess, size }: FreeTextUp
                 style={fieldSpacingContainerStyle}
                 onChange={() => {}}
                 setFieldValue={setFieldValue}
+                required={false}
+                // FIXME: Required Fields - make dynamic
+                // required={(mandatoryAttributes.includes('fileMarkings'))}
               />
             </DialogContent>
             <DialogActions>

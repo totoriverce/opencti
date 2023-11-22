@@ -2,7 +2,6 @@ import { Field, Form, Formik } from 'formik';
 import React, { FunctionComponent } from 'react';
 import { createFragmentContainer, graphql } from 'react-relay';
 import * as Yup from 'yup';
-import { ObjectShape } from 'yup';
 import { GenericContext } from '@components/common/model/GenericContextModel';
 import ConfidenceField from '@components/common/form/ConfidenceField';
 import FormHelperText from '@mui/material/FormHelperText';
@@ -18,6 +17,7 @@ import useFormEditor, { GenericData } from '../../../../utils/hooks/useFormEdito
 import useGranted, { SETTINGS_SETACCESSES } from '../../../../utils/hooks/useGranted';
 import { fieldSpacingContainerStyle } from '../../../../utils/field';
 import useApiMutation from '../../../../utils/hooks/useApiMutation';
+import { useSchemaEditionValidation, useMandatorySchemaAttributes } from '../../../../utils/hooks/useSchemaAttributes';
 
 export const groupMutationFieldPatch = graphql`
   mutation GroupEditionOverviewFieldPatchMutation(
@@ -65,7 +65,7 @@ const groupMutationRelationDelete = graphql`
     $relationship_type: String!
   ) {
     groupEdit(id: $id) {
-      relationDelete( 
+      relationDelete(
         fromId: $fromId
         toId: $toId
         relationship_type: $relationship_type) {
@@ -74,6 +74,8 @@ const groupMutationRelationDelete = graphql`
     }
   }
 `;
+
+const OBJECT_TYPE = 'Group';
 
 interface GroupEditionOverviewComponentProps {
   group: GroupEditionOverview_group$data,
@@ -85,18 +87,21 @@ const GroupEditionOverviewComponent: FunctionComponent<GroupEditionOverviewCompo
   const hasSetAccess = useGranted([SETTINGS_SETACCESSES]);
   const [commitFieldPatch] = useApiMutation(groupMutationFieldPatch);
 
-  const basicShape: ObjectShape = {
-    name: Yup.string().required(t_i18n('This field is required')),
+  const basicShape: Yup.ObjectShape = {
+    name: Yup.string(),
     description: Yup.string().nullable(),
     default_assignation: Yup.bool(),
     auto_new_marking: Yup.bool(),
     group_confidence_level: Yup.number()
       .min(0, t_i18n('The value must be greater than or equal to 0'))
-      .max(100, t_i18n('The value must be less than or equal to 100'))
-      .required(t_i18n('This field is required')),
+      .max(100, t_i18n('The value must be less than or equal to 100')),
   };
+  const mandatoryAttributes = useMandatorySchemaAttributes(OBJECT_TYPE);
+  const validator = useSchemaEditionValidation(
+    OBJECT_TYPE,
+    basicShape,
+  );
 
-  const groupValidator = Yup.object().shape(basicShape);
   const queries = {
     fieldPatch: groupMutationFieldPatch,
     editionFocus: groupEditionOverviewFocus,
@@ -104,10 +109,10 @@ const GroupEditionOverviewComponent: FunctionComponent<GroupEditionOverviewCompo
     relationDelete: groupMutationRelationDelete,
   };
 
-  const editor = useFormEditor(group as unknown as GenericData, false, queries, groupValidator);
+  const editor = useFormEditor(group as unknown as GenericData, false, queries, validator);
 
   const handleSubmitField = (name: string, value: string) => {
-    groupValidator
+    validator
       .validateAt(name, { [name]: value })
       .then(() => {
         if (name === 'group_confidence_level') {
@@ -157,7 +162,7 @@ const GroupEditionOverviewComponent: FunctionComponent<GroupEditionOverviewCompo
       <Formik
         enableReinitialize={true}
         initialValues={initialValues}
-        validationSchema={groupValidator}
+        validationSchema={validator}
         onSubmit={() => {
         }}
       >
@@ -167,6 +172,7 @@ const GroupEditionOverviewComponent: FunctionComponent<GroupEditionOverviewCompo
               component={TextField}
               name="name"
               label={t_i18n('Name')}
+              required={(mandatoryAttributes.includes('name'))}
               fullWidth={true}
               onFocus={editor.changeFocus}
               onSubmit={editor.changeField}
@@ -178,6 +184,7 @@ const GroupEditionOverviewComponent: FunctionComponent<GroupEditionOverviewCompo
               component={MarkdownField}
               name="description"
               label={t_i18n('Description')}
+              required={(mandatoryAttributes.includes('description'))}
               fullWidth={true}
               multiline={true}
               rows={4}
