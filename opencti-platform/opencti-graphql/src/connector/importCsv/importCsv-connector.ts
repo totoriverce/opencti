@@ -103,7 +103,8 @@ const initImportCsvConnector = () => {
   const handleCsvImport = async (context: AuthContext) => {
     consumeQueue(context, connector.id, connectionSetterCallback, consumeQueueCallback).catch(() => {
       if (rabbitMqConnection) rabbitMqConnection.close();
-      setTimeout(handleCsvImport, RETRY_CONNECTION_PERIOD);
+      // TODO REMOVE TYPING, don't know why it's not working
+      setTimeout(handleCsvImport as unknown as (args: void) => void, RETRY_CONNECTION_PERIOD);
     });
   };
 
