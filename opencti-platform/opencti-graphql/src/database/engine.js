@@ -1729,43 +1729,63 @@ const buildLocalMustFilter = async (validFilter) => {
       throw UnsupportedError('Filter must have only one field', { keys: arrayKeys });
     } else {
       const schemaKey = schemaAttributesDefinition.getAttributeByName(R.head(arrayKeys));
-      valuesFiltering.push(schemaKey?.type === 'string' && schemaKey?.format === 'text'
-        ? { // text filters: use wildcard
-          bool: {
-            must_not: {
-              wildcard: {
-                [R.head(arrayKeys)]: '*'
-              }
-            },
+      let valueFiltering = { // classic filters: field doesn't exist
+        bool: {
+          must_not: {
+            exists: {
+              field: R.head(arrayKeys)
+            }
           }
-        } : { // other filters: nil <-> (field doesn't exist) OR (field = empty string)
-          bool: {
-            should: [{
-              bool: {
-                must_not: {
-                  exists: {
-                    field: R.head(arrayKeys)
+        }
+      };
+      if (schemaKey?.type === 'string') {
+        if (schemaKey?.format === 'text') { // text filters: use wildcard
+          valueFiltering = {
+            bool: {
+              must_not: {
+                wildcard: {
+                  [R.head(arrayKeys)]: '*'
+                }
+              },
+            }
+          };
+        } else { // string filters: nil <-> (field doesn't exist) OR (field = empty string)
+          valueFiltering = {
+            bool: {
+              should: [{
+                bool: {
+                  must_not: {
+                    exists: {
+                      field: R.head(arrayKeys)
+                    }
                   }
                 }
-              }
-            }, {
-              multi_match: {
-                fields: arrayKeys.map((k) => `${isDateNumericOrBooleanAttribute(k) || k === '_id' || isObjectFlatAttribute(k) ? k : `${k}.keyword`}`),
-                query: '',
-              },
-            }],
-            minimum_should_match: 1,
-          }
-        });
+              }, {
+                multi_match: {
+                  fields: arrayKeys.map((k) => `${k === '_id' ? k : `${k}.keyword`}`),
+                  query: '',
+                },
+              }],
+              minimum_should_match: 1,
+            }
+          };
+        }
+      }
+      valuesFiltering.push(valueFiltering);
     }
   } else if (operator === 'not_nil') {
     if (arrayKeys.length > 1) {
       throw UnsupportedError('Filter must have only one field', { keys: arrayKeys });
     } else {
       const schemaKey = schemaAttributesDefinition.getAttributeByName(R.head(arrayKeys));
-      valuesFiltering.push(
-        schemaKey?.type === 'string' && schemaKey?.format === 'text'
-          ? { // text filters: use wildcard
+      let valueFiltering = { // classic filters: field exists
+        exists: {
+          field: R.head(arrayKeys)
+        }
+      };
+      if (schemaKey?.type === 'string') {
+        if (schemaKey?.format === 'text') { // text filters: use wildcard
+          valueFiltering = {
             bool: {
               must: {
                 wildcard: {
@@ -1773,7 +1793,9 @@ const buildLocalMustFilter = async (validFilter) => {
                 }
               },
             }
-          } : { // other filters: not_nil <-> (field exists) AND (field != empty string)
+          };
+        } else { // other filters: not_nil <-> (field exists) AND (field != empty string)
+          valueFiltering = {
             bool: {
               should: [{
                 exists: {
@@ -1783,7 +1805,7 @@ const buildLocalMustFilter = async (validFilter) => {
                 bool: {
                   must_not: {
                     multi_match: {
-                      fields: arrayKeys.map((k) => `${isDateNumericOrBooleanAttribute(k) || k === '_id' || isObjectFlatAttribute(k) ? k : `${k}.keyword`}`),
+                      fields: arrayKeys.map((k) => `${k === '_id' ? k : `${k}.keyword`}`),
                       query: '',
                     },
                   }
@@ -1791,8 +1813,10 @@ const buildLocalMustFilter = async (validFilter) => {
               }],
               minimum_should_match: 2,
             }
-          }
-      );
+          };
+        }
+      }
+      valuesFiltering.push(valueFiltering);
     }
   }
   // 03. Handle values according to the operator
