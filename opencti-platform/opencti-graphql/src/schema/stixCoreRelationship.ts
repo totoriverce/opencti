@@ -50,6 +50,7 @@ export const RELATION_EMPLOYED_BY = 'employed-by'; // Extension (OpenCTI)
 export const RELATION_RESIDES_IN = 'resides-in'; // Extension (OpenCTI)
 export const RELATION_CITIZEN_OF = 'citizen-of'; // Extension (OpenCTI)
 export const RELATION_NATIONAL_OF = 'national-of'; // Extension (OpenCTI)
+export const RELATION_KNOWN_AS = 'known-as'; // Extension (OpenCTI)
 
 export const RELATION_SUBTECHNIQUE_OF = 'subtechnique-of'; // Extension (MITRE)
 export const RELATION_REVOKED_BY = 'revoked-by'; // Extension (MITRE)
