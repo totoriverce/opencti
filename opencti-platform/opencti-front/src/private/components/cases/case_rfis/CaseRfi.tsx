@@ -43,9 +43,10 @@ const useStyles = makeStyles(() => ({
 
 interface CaseRfiProps {
   data: CaseUtils_case$key;
+  enableReferences: boolean;
 }
 
-const CaseRfiComponent: FunctionComponent<CaseRfiProps> = ({ data }) => {
+const CaseRfiComponent: FunctionComponent<CaseRfiProps> = ({ data, enableReferences }) => {
   const classes = useStyles();
   const { t_i18n } = useFormatter();
   const ref = useRef(null);
@@ -138,6 +139,7 @@ const CaseRfiComponent: FunctionComponent<CaseRfiProps> = ({ data }) => {
                 handleSort={helpers.handleSort}
                 defaultMarkings={convertMarkings(caseRfiData)}
                 containerRef={ref}
+                enableReferences={enableReferences}
               />
             </React.Suspense>
           )}
@@ -148,6 +150,7 @@ const CaseRfiComponent: FunctionComponent<CaseRfiProps> = ({ data }) => {
             container={caseRfiData}
             types={['Incident', 'stix-sighting-relationship', 'Report']}
             title={t_i18n('Origin of the case')}
+            enableReferences={enableReferences}
           />
         </Grid>
         <Grid item={true} xs={6} style={{ marginTop: 30 }}>
@@ -156,12 +159,14 @@ const CaseRfiComponent: FunctionComponent<CaseRfiProps> = ({ data }) => {
             container={caseRfiData}
             types={['Stix-Cyber-Observable']}
             title={t_i18n('Observables')}
+            enableReferences={enableReferences}
           />
         </Grid>
         <Grid item={true} xs={6} style={{ marginTop: 30 }}>
           <ContainerStixObjectsOrStixRelationships
             isSupportParticipation={false}
             container={caseRfiData}
+            enableReferences={enableReferences}
           />
         </Grid>
         <Grid item={true} xs={6} style={{ marginTop: 30 }}>

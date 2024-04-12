@@ -86,6 +86,7 @@ const ContainerStixCyberObservableLineComponent = (props) => {
     deSelectedElements,
     selectAll,
     setSelectedElements,
+    enableReferences,
   } = props;
   const classes = useStyles();
   const { t_i18n, fd, n } = useFormatter();
@@ -225,6 +226,7 @@ const ContainerStixCyberObservableLineComponent = (props) => {
             paginationOptions={paginationOptions}
             selectedElements={selectedElements}
             setSelectedElements={setSelectedElements}
+            enableReferences={enableReferences}
           />
         )}
       </ListItemSecondaryAction>

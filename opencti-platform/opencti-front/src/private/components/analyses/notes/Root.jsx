@@ -145,7 +145,7 @@ class RootNote extends Component {
                       <Route
                         path="/"
                         element={
-                          <Note note={props.note} />
+                          <Note note={props.note} enableReferences={false}/>
                         }
                       />
                       <Route

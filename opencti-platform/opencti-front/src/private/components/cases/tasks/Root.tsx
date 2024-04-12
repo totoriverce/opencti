@@ -22,6 +22,8 @@ import { RootTaskQuery } from './__generated__/RootTaskQuery.graphql';
 import { RootTaskSubscription } from './__generated__/RootTaskSubscription.graphql';
 import { useFormatter } from '../../../../components/i18n';
 import Breadcrumbs from '../../../../components/Breadcrumbs';
+import { useIsEnforceReference } from '../../../../utils/hooks/useEntitySettings';
+import useGranted, { BYPASSREFERENCE } from '../../../../utils/hooks/useGranted';
 
 const subscription = graphql`
   subscription RootTaskSubscription($id: ID!) {
@@ -69,6 +71,7 @@ const RootTaskComponent = ({ queryRef, taskId }) => {
     [taskId],
   );
   const location = useLocation();
+  const enableReferences = useIsEnforceReference('Task') && !useGranted([BYPASSREFERENCE]);
   const { t_i18n } = useFormatter();
   useSubscription(subConfig);
   const {
@@ -144,7 +147,7 @@ const RootTaskComponent = ({ queryRef, taskId }) => {
           <Routes>
             <Route
               path="/"
-              element={<CaseTask data={data} />}
+              element={<CaseTask data={data} enableReferences={enableReferences} />}
             />
             <Route
               path="/content"

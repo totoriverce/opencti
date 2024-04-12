@@ -86,6 +86,7 @@ const ContainerStixCoreObjectsMappingLines = ({
   contentMapping,
   contentMappingData,
   setNumberOfElements,
+  enableReferences,
 }) => {
   const { data, hasMore, loadMore, isLoadingMore } = usePreloadedPaginationFragment({
     linesQuery: containerStixCoreObjectsMappingLinesQuery,
@@ -117,6 +118,7 @@ const ContainerStixCoreObjectsMappingLines = ({
       height={height}
       contentMapping={contentMapping}
       contentMappingData={contentMappingData}
+      enableReferences={enableReferences}
     />
   );
 };

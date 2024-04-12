@@ -62,6 +62,7 @@ const ContainerStixCoreObjectLineComponent = (props) => {
     containerId,
     paginationOptions,
     contentMappingData,
+    enableReferences,
   } = props;
   const classes = useStyles();
   const { t_i18n, fd } = useFormatter();
@@ -157,6 +158,7 @@ const ContainerStixCoreObjectLineComponent = (props) => {
             paginationOptions={paginationOptions}
             contentMappingData={contentMappingData}
             mapping={contentMapping[node.standard_id]}
+            enableReferences={enableReferences}
           />
         )}
       </ListItemSecondaryAction>
