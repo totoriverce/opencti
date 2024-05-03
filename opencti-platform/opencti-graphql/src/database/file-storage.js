@@ -6,6 +6,7 @@ import { Promise as BluePromise } from 'bluebird';
 import { defaultProvider } from '@aws-sdk/credential-provider-node';
 import { getDefaultRoleAssumerWithWebIdentity } from '@aws-sdk/client-sts';
 import mime from 'mime-types';
+import { CopyObjectCommand } from '@aws-sdk/client-s3';
 import conf, { booleanConf, ENABLED_FILE_INDEX_MANAGER, logApp } from '../config/conf';
 import { now, sinceNowInMinutes, truncate, utcDate } from '../utils/format';
 import { DatabaseError, FunctionalError, UnsupportedError } from '../config/errors';
@@ -137,6 +138,22 @@ export const downloadFile = async (id) => {
     return object.Body;
   } catch (err) {
     logApp.info('[FILE STORAGE] Cannot retrieve file from S3', { error: err });
+    return null;
+  }
+};
+
+export const copyFile = async (sourceId, targetId) => {
+  try {
+    const input = {
+      Bucket: bucketName,
+      CopySource: `${bucketName}/${sourceId}`, // CopySource must start with bucket name, but not Key
+      Key: targetId
+    };
+    const command = new CopyObjectCommand(input);
+    await s3Client.send(command);
+    return null;
+  } catch (err) {
+    logApp.error(`[FILE STORAGE] Cannot copy file ${sourceId} to ${targetId} in S3`, { error: err });
     return null;
   }
 };
