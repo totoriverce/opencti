@@ -85,6 +85,7 @@ const ContainerStixDomainObjectLineComponent = (props) => {
     deSelectedElements,
     selectAll,
     onToggleShiftEntity,
+    enableReferences,
     index,
   } = props;
   const classes = useStyles();
@@ -222,6 +223,7 @@ const ContainerStixDomainObjectLineComponent = (props) => {
             relationshipType="object"
             paginationKey="Pagination_objects"
             paginationOptions={paginationOptions}
+            enableReferences={enableReferences}
           />
         )}
       </ListItemSecondaryAction>

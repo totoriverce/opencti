@@ -433,6 +433,7 @@ const ContainerContentComponent = ({ containerData }) => {
               addMapping={addMapping}
               contentMappingData={contentMappingData}
               contentMapping={contentMapping}
+              enableReferences={enableReferences}
             />
           </Paper>
         </Grid>

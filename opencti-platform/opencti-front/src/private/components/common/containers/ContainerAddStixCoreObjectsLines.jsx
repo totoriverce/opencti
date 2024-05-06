@@ -114,7 +114,7 @@ class ContainerAddStixCoreObjectsLinesComponent extends Component {
     );
   }
 
-  sendStixCoreObjectModification(stixCoreObject, commitMessage, references, setSubmitting, resetForm) {
+  sendStixCoreObjectModification(stixCoreObject, commitMessage = '', references = [], setSubmitting = null, resetForm = null) {
     const {
       containerId,
       paginationOptions,
@@ -146,8 +146,8 @@ class ContainerAddStixCoreObjectsLinesComponent extends Component {
             if (typeof onDelete === 'function') {
               onDelete(stixCoreObject);
             }
-            setSubmitting(false);
-            resetForm(true);
+            if (setSubmitting) setSubmitting(false);
+            if (resetForm) resetForm(true);
           },
           setSubmitting,
         });
@@ -180,8 +180,8 @@ class ContainerAddStixCoreObjectsLinesComponent extends Component {
                 this.state.addedStixCoreObjects,
               ),
             });
-            setSubmitting(false);
-            resetForm(true);
+            if (setSubmitting) setSubmitting(false);
+            if (resetForm) resetForm(true);
           },
           setSubmitting,
         });
@@ -210,8 +210,8 @@ class ContainerAddStixCoreObjectsLinesComponent extends Component {
             if (typeof onAdd === 'function') {
               onAdd(stixCoreObject);
             }
-            setSubmitting(false);
-            resetForm(true);
+            if (setSubmitting) setSubmitting(false);
+            if (resetForm) resetForm(true);
           },
           setSubmitting,
         });
@@ -252,8 +252,8 @@ class ContainerAddStixCoreObjectsLinesComponent extends Component {
             if (typeof onAdd === 'function') {
               onAdd(stixCoreObject);
             }
-            setSubmitting(false);
-            resetForm(true);
+            if (setSubmitting) setSubmitting(false);
+            if (resetForm) resetForm(true);
           },
           setSubmitting,
         });
@@ -267,11 +267,11 @@ class ContainerAddStixCoreObjectsLinesComponent extends Component {
       this.setState({ referenceDialogOpened: true });
       this.setState({ currentlyToggledCoreObject: stixCoreObject });
     } else {
-      this.sendStixCoreObjectModification(stixCoreObject, '', [], () => {}, () => {});
+      this.sendStixCoreObjectModification(stixCoreObject);
     }
   }
 
-  closePopup() {
+  closeReferencesPopup() {
     this.setState({ referenceDialogOpened: false });
     this.setState({ currentlyToggledCoreObject: null });
   }
@@ -320,7 +320,7 @@ class ContainerAddStixCoreObjectsLinesComponent extends Component {
             }) => (
               <Form>
                 <CommitMessage
-                  handleClose={this.closePopup.bind(this)}
+                  handleClose={this.closeReferencesPopup.bind(this)}
                   open={referenceDialogOpened}
                   submitForm={submitForm}
                   disabled={isSubmitting}
