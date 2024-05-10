@@ -248,7 +248,7 @@ const TriggerLiveCreation: FunctionComponent<TriggerLiveCreationProps> = ({
             && <Filters
               availableFilterKeys={stixFilters}
               helpers={helpers}
-              searchContext={{ entityTypes: ['Stix-Core-Object', 'stix-core-relationship'] }}
+              searchContext={{ entityTypes: ['Stix-Core-Object', 'stix-core-relationship', 'Stix-Filtering'] }}
                />
           )}
         </Box>
@@ -297,6 +297,7 @@ const TriggerLiveCreation: FunctionComponent<TriggerLiveCreationProps> = ({
             filters={filters}
             helpers={helpers}
             redirection
+            entityTypes={['Stix-Core-Object', 'stix-core-relationship', 'Stix-Filtering']}
           />
       }
 
