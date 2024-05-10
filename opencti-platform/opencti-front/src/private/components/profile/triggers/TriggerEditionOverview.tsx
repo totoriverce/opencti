@@ -444,7 +444,7 @@ TriggerEditionOverviewProps
                   helpers={helpers}
                   redirection
                   entityTypes={['Stix-Core-Object', 'stix-core-relationship', 'Stix-Filtering']}
-              />}
+                />}
             </span>
           )}
         </Form>
