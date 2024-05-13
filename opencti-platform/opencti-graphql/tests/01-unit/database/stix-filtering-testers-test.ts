@@ -724,7 +724,7 @@ describe('Stix filter testers', () => {
 
       filter = {
         key: ['representative'],
-        mode: 'and',
+        mode: 'or',
         operator: 'eq',
         values: ['www.xolod-teplo.ru', 'test']
       } as Filter;
