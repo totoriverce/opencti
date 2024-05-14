@@ -1162,7 +1162,7 @@ const convertPersonaToStix = (instance: StoreCyberObservable, type: string): SCO
   const stixCyberObject = buildStixCyberObservable(instance);
   return {
     ...buildStixCyberObservable(instance),
-    name: instance.name,
+    persona_name: instance.name,
     persona_type: instance.persona_type,
     labels: (instance[INPUT_LABELS] ?? []).map((m) => m.value),
     score: instance.x_opencti_score,

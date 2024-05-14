@@ -236,7 +236,7 @@ export const extractStixRepresentative = (
   }
   if (entityType === ENTITY_PERSONA) {
     const persona = stix as SCO.StixPersona;
-    return persona.name ?? 'Unknown';
+    return persona.persona_name ?? 'Unknown';
   }
   if (entityType === ENTITY_MUTEX) {
     return (stix as SCO.StixMutex).name ?? 'Unknown';

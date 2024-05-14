@@ -10420,7 +10420,7 @@ type Persona implements BasicObject & StixObject & StixCoreObject & StixCyberObs
   observable_value: String!
   indicators(first: Int): IndicatorConnection
   # Persona
-  name: String!
+  persona_name: String!
   persona_type: String!
   # Technical
   creators: [Creator!]
@@ -10433,7 +10433,7 @@ type Persona implements BasicObject & StixObject & StixCoreObject & StixCyberObs
   jobs(first: Int): [Work]
 }
 input PersonaAddInput {
-  name: String!
+  persona_name: String!
   persona_type: String!
 }
 ###### RELATIONSHIPS

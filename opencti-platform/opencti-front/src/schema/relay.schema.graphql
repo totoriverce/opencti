@@ -6854,7 +6854,7 @@ type Persona implements BasicObject & StixObject & StixCoreObject & StixCyberObs
   x_opencti_description: String
   observable_value: String!
   indicators(first: Int): IndicatorConnection
-  name: String!
+  persona_name: String!
   persona_type: String!
   creators: [Creator!]
   toStix: String
@@ -6867,7 +6867,7 @@ type Persona implements BasicObject & StixObject & StixCoreObject & StixCyberObs
 }
 
 input PersonaAddInput {
-  name: String!
+  persona_name: String!
   persona_type: String!
 }
 

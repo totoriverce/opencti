@@ -8,7 +8,7 @@ const READ_QUERY = gql`
       ... on Persona {
         id
         standard_id
-        name
+        persona_name
         persona_type
         toStix
       }
@@ -28,7 +28,7 @@ describe('Persona StixCyberObservable resolver standard behavior', () => {
           ... on Persona {
             id
             standard_id
-            name
+            persona_name
             persona_type
           }
         }
@@ -37,7 +37,7 @@ describe('Persona StixCyberObservable resolver standard behavior', () => {
     // Create the persona
     const PERSONA_TO_CREATE = {
       input: {
-        name: personaName,
+        persona_name: personaName,
         persona_type: personaType,
       },
     };
@@ -48,7 +48,7 @@ describe('Persona StixCyberObservable resolver standard behavior', () => {
     expect(persona).not.toBeNull();
     expect(persona.data).not.toBeNull();
     expect(persona.data?.stixCyberObservableAdd).not.toBeNull();
-    expect(persona.data?.stixCyberObservableAdd.name).toEqual(personaName);
+    expect(persona.data?.stixCyberObservableAdd.persona_name).toEqual(personaName);
     expect(persona.data?.stixCyberObservableAdd.persona_type).toEqual(personaType);
     personaInternalId = persona.data?.stixCyberObservableAdd.id;
     personaStixId = persona.data?.stixCyberObservableAdd.standard_id;
@@ -63,7 +63,7 @@ describe('Persona StixCyberObservable resolver standard behavior', () => {
     expect(queryResult.data).not.toBeNull();
     expect(queryResult.data?.stixCyberObservable).not.toBeNull();
     expect(queryResult.data?.stixCyberObservable.id).toEqual(personaInternalId);
-    expect(queryResult.data?.stixCyberObservable.name).toEqual(personaName);
+    expect(queryResult.data?.stixCyberObservable.persona_name).toEqual(personaName);
     expect(queryResult.data?.stixCyberObservable.persona_type).toEqual(personaType);
     expect(queryResult.data?.stixCyberObservable.toStix.length).toBeGreaterThan(5);
   });
@@ -77,7 +77,7 @@ describe('Persona StixCyberObservable resolver standard behavior', () => {
     expect(queryResult.data).not.toBeNull();
     expect(queryResult.data?.stixCyberObservable).not.toBeNull();
     expect(queryResult.data?.stixCyberObservable.id).toEqual(personaInternalId);
-    expect(queryResult.data?.stixCyberObservable.name).toEqual(personaName);
+    expect(queryResult.data?.stixCyberObservable.persona_name).toEqual(personaName);
     expect(queryResult.data?.stixCyberObservable.persona_type).toEqual(personaType);
     expect(queryResult.data?.stixCyberObservable.toStix.length).toBeGreaterThan(5);
   });
@@ -90,7 +90,7 @@ describe('Persona StixCyberObservable resolver standard behavior', () => {
           fieldPatch(input: $input) {
             ... on Persona {
               id
-              name
+              persona_name
               persona_type
             }
           }
@@ -102,7 +102,7 @@ describe('Persona StixCyberObservable resolver standard behavior', () => {
       variables: {
         id: personaInternalId,
         input: [{
-          key: 'name',
+          key: 'persona_name',
           value: updatedName,
         }, {
           key: 'persona_type',
@@ -110,7 +110,7 @@ describe('Persona StixCyberObservable resolver standard behavior', () => {
         }]
       }
     });
-    expect(queryResult.data?.stixCyberObservableEdit.fieldPatch.name).equal(updatedName);
+    expect(queryResult.data?.stixCyberObservableEdit.fieldPatch.persona_name).equal(updatedName);
     expect(queryResult.data?.stixCyberObservableEdit.fieldPatch.persona_type).equal(updatedType);
   });
   it('should delete a persona', async () => {

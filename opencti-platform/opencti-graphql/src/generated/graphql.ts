@@ -16873,7 +16873,6 @@ export type Persona = BasicObject & StixCoreObject & StixCyberObservable & StixO
   indicators?: Maybe<IndicatorConnection>;
   is_inferred: Scalars['Boolean']['output'];
   jobs?: Maybe<Array<Maybe<Work>>>;
-  name: Scalars['String']['output'];
   notes?: Maybe<NoteConnection>;
   numberOfConnectedElement: Scalars['Int']['output'];
   objectLabel?: Maybe<Array<Label>>;
@@ -16884,6 +16883,7 @@ export type Persona = BasicObject & StixCoreObject & StixCyberObservable & StixO
   opinions?: Maybe<OpinionConnection>;
   parent_types: Array<Maybe<Scalars['String']['output']>>;
   pendingFiles?: Maybe<FileConnection>;
+  persona_name: Scalars['String']['output'];
   persona_type: Scalars['String']['output'];
   reports?: Maybe<ReportConnection>;
   representative: Representative;
@@ -17036,7 +17036,7 @@ export type PersonaStixCoreRelationshipsDistributionArgs = {
 };
 
 export type PersonaAddInput = {
-  name: Scalars['String']['input'];
+  persona_name: Scalars['String']['input'];
   persona_type: Scalars['String']['input'];
 };
 
@@ -35507,7 +35507,6 @@ export type PersonaResolvers<ContextType = any, ParentType extends ResolversPare
   indicators?: Resolver<Maybe<ResolversTypes['IndicatorConnection']>, ParentType, ContextType, Partial<PersonaIndicatorsArgs>>;
   is_inferred?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   jobs?: Resolver<Maybe<Array<Maybe<ResolversTypes['Work']>>>, ParentType, ContextType, Partial<PersonaJobsArgs>>;
-  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   notes?: Resolver<Maybe<ResolversTypes['NoteConnection']>, ParentType, ContextType, Partial<PersonaNotesArgs>>;
   numberOfConnectedElement?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   objectLabel?: Resolver<Maybe<Array<ResolversTypes['Label']>>, ParentType, ContextType>;
@@ -35518,6 +35517,7 @@ export type PersonaResolvers<ContextType = any, ParentType extends ResolversPare
   opinions?: Resolver<Maybe<ResolversTypes['OpinionConnection']>, ParentType, ContextType, Partial<PersonaOpinionsArgs>>;
   parent_types?: Resolver<Array<Maybe<ResolversTypes['String']>>, ParentType, ContextType>;
   pendingFiles?: Resolver<Maybe<ResolversTypes['FileConnection']>, ParentType, ContextType, Partial<PersonaPendingFilesArgs>>;
+  persona_name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   persona_type?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   reports?: Resolver<Maybe<ResolversTypes['ReportConnection']>, ParentType, ContextType, Partial<PersonaReportsArgs>>;
   representative?: Resolver<ResolversTypes['Representative'], ParentType, ContextType>;

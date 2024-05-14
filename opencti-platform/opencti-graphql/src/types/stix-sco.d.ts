@@ -606,9 +606,9 @@ export interface StixMediaContent extends StixCyberObject {
 }
 
 // Custom object extension - Persona
-// name, persona_type
+// persona_name, persona_type
 export interface StixPersona extends StixCyberObject {
-  name: string;
+  persona_name: string;
   persona_type: string;
   score: number;
   labels: Array<string>;
