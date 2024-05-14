@@ -394,7 +394,7 @@ const FeedCreation = (props) => {
                             style={fieldSpacingContainerStyle}
                             onChange={setFieldValue}
                             multiple={true}
-                            helpertext={t('Let the field empty to grant all authenticated users')}
+                            helpertext={t('Leave the field empty to grant all authenticated users')}
                             name="authorized_members"
                           />
                         )}

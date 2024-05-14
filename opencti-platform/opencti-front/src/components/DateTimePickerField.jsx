@@ -31,6 +31,7 @@ const DateTimePickerField = (props) => {
     onSubmit,
     textFieldProps,
     withSeconds = false,
+    required = false,
   } = props;
   const intl = useIntl();
   const [field, meta] = useField(name);
@@ -45,9 +46,15 @@ const DateTimePickerField = (props) => {
   );
   const internalOnChange = React.useCallback(
     (date) => {
-      setFieldValue(name, date ?? null);
+      let defaultEmpty = null;
+      if (required) {
+        // Support for new configurable required fields to validate it will show error message
+        // null is a value versus '' (empty)
+        defaultEmpty = '';
+      }
+      setFieldValue(name, date ?? defaultEmpty);
       if (typeof onChange === 'function') {
-        onChange(name, date ?? null);
+        onChange(name, date ?? defaultEmpty);
       }
     },
     [setFieldValue, onChange, name],
