@@ -6,6 +6,7 @@ import { Promise as BluePromise } from 'bluebird';
 import { defaultProvider } from '@aws-sdk/credential-provider-node';
 import { getDefaultRoleAssumerWithWebIdentity } from '@aws-sdk/client-sts';
 import mime from 'mime-types';
+import { CopyObjectCommand } from '@aws-sdk/client-s3';
 import conf, { booleanConf, ENABLED_FILE_INDEX_MANAGER, logApp } from '../config/conf';
 import { now, sinceNowInMinutes, truncate, utcDate } from '../utils/format';
 import { DatabaseError, FunctionalError, UnsupportedError } from '../config/errors';
@@ -141,6 +142,45 @@ export const downloadFile = async (id) => {
   }
 };
 
+/**
+ * - Copy file from a place to another in S3
+ * - Store file in documents
+ * @param sourceId
+ * @param targetId
+ * @param sourceDocument
+ * @param targetEntityId
+ * @returns {Promise<null|void>} the document entity on success, null on errors.
+ */
+export const copyFile = async (sourceId, targetId, sourceDocument, targetEntityId) => {
+  try {
+    const input = {
+      Bucket: bucketName,
+      CopySource: `${bucketName}/${sourceId}`, // CopySource must start with bucket name, but not Key
+      Key: targetId
+    };
+    const command = new CopyObjectCommand(input);
+    await s3Client.send(command);
+    // Register in elastic
+    const targetMetadata = { ...sourceDocument.metaData, entity_id: targetEntityId };
+
+    const file = {
+      id: targetId,
+      name: sourceDocument.name,
+      size: sourceDocument.size,
+      information: '',
+      lastModified: new Date(),
+      lastModifiedSinceMin: sinceNowInMinutes(new Date()),
+      metaData: targetMetadata,
+      uploadStatus: 'complete',
+    };
+    await indexFileToDocument(file);
+    return file;
+  } catch (err) {
+    logApp.error(`[FILE STORAGE] Cannot copy file ${sourceId} to ${targetId} in S3`, { error: err });
+    return null;
+  }
+};
+
 export const streamToString = (stream, encoding = 'utf8') => {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -158,7 +198,10 @@ export const getFileContent = async (id, encoding = 'utf8') => {
   return streamToString(object.Body, encoding);
 };
 
-export const storeFileConverter = (user, file) => {
+/**
+ * Convert File object coming from uploadToStorage/upload functions to x_opencti_file format.
+ */
+export const storeFileConverter = (file) => {
   return {
     id: file.id,
     name: file.name,
@@ -401,4 +444,13 @@ export const streamConverter = (stream) => {
     });
     stream.on('end', () => resolve(data));
   });
+};
+
+// Utilities to use typescript on file-storage-helper.
+export const sendS3Command = (command) => {
+  return s3Client.send(command);
+};
+
+export const openCTIBucket = () => {
+  return bucketName;
 };

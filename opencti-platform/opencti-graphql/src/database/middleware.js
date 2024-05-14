@@ -199,7 +199,7 @@ import {
   controlUserConfidenceAgainstElement
 } from '../utils/confidence-level';
 import { buildEntityData, buildInnerRelation, buildRelationData } from './data-builder';
-import { deleteAllObjectFiles, uploadToStorage } from './file-storage-helper';
+import { deleteAllObjectFiles, moveAllFilesFromEntityToAnother, uploadToStorage } from './file-storage-helper';
 import { storeFileConverter } from './file-storage';
 
 // region global variables
@@ -1065,6 +1065,7 @@ const mergeEntitiesRaw = async (context, user, targetEntity, sourceEntities, tar
   const { chosenFields = {} } = opts;
   // 01 Check if everything is fully resolved.
   const elements = [targetEntity, ...sourceEntities];
+  logApp.info('[OPENCTI] Merging START -----------------------------');
   logApp.info(`[OPENCTI] Merging ${sourceEntities.map((i) => i.internal_id).join(',')} in ${targetEntity.internal_id}`);
   // Pre-checks
   // - No self merge
@@ -1247,6 +1248,20 @@ const mergeEntitiesRaw = async (context, user, targetEntity, sourceEntities, tar
     },
     { concurrency: ES_MAX_CONCURRENCY }
   );
+
+  // Merge files on S3 and update x_opencti_files
+  const sourceEntitiesWithFiles = sourceEntities.filter((entity) => { return entity.x_opencti_files ? entity.x_opencti_files.length > 0 : true; });
+  let newXOpenctiFiles = [...targetEntity.x_opencti_files];
+
+  for (let i = 0; i < sourceEntitiesWithFiles.length; i += 1) {
+    if (sourceEntitiesWithFiles[i].x_opencti_files) {
+      if (sourceEntitiesWithFiles[i].x_opencti_files.length > 0) {
+        const currentEntityXOpenctiFiles = await moveAllFilesFromEntityToAnother(context, user, sourceEntitiesWithFiles[i], targetEntity);
+        newXOpenctiFiles = [...newXOpenctiFiles, ...currentEntityXOpenctiFiles];
+      }
+    }
+  }
+
   // Take care of relations deletions to prevent duplicate marking definitions.
   const elementToRemoves = [...sourceEntities, ...fromDeletions, ...toDeletions];
   // All not move relations will be deleted, so we need to remove impacted rel in entities.
@@ -1302,6 +1317,11 @@ const mergeEntitiesRaw = async (context, user, targetEntity, sourceEntities, tar
       updateAttributes.push({ key: targetFieldKey, value: [sourceFieldValue] });
     }
   }
+  // Update x_opencti_files
+  if (newXOpenctiFiles.length > 0) {
+    updateAttributes.push({ key: 'x_opencti_files', value: newXOpenctiFiles, operation: UPDATE_OPERATION_REPLACE });
+  }
+
   // eslint-disable-next-line no-use-before-define
   const data = await updateAttributeRaw(context, user, targetEntity, updateAttributes);
   const { impactedInputs } = data;
@@ -2449,7 +2469,7 @@ const upsertElement = async (context, user, element, type, basePatch, opts = {})
   if (!isEmptyField(updatePatch.file)) {
     const path = `import/${element.entity_type}/${element.internal_id}`;
     const { upload: file } = await uploadToStorage(context, user, path, updatePatch.file, { entity: element });
-    const convertedFile = storeFileConverter(user, file);
+    const convertedFile = storeFileConverter(file);
     // The impact in the database is the completion of the files
     const fileImpact = { key: 'x_opencti_files', value: [...(element.x_opencti_files ?? []), convertedFile] };
     inputs.push(fileImpact);
@@ -2827,6 +2847,8 @@ export const getExistingEntities = async (context, user, input, type) => {
 };
 
 const createEntityRaw = async (context, user, rawInput, type, opts = {}) => {
+  logApp.info(`ANGIE - createEntityRaw, internal_id:${rawInput.internal_id}`);
+
   // region confidence control
   const input = { ...rawInput };
   const { confidenceLevelToApply } = controlCreateInputWithUserConfidence(user, input, type);
@@ -2870,6 +2892,7 @@ const createEntityRaw = async (context, user, rawInput, type, opts = {}) => {
     let dataEntity;
     let dataMessage;
     if (existingEntities.length > 0) {
+      logApp.info(`ANGIE - entity already exists, internal_id:${rawInput.internal_id}`);
       // We need to filter what we found with the user rights
       const filteredEntities = await userFilterStoreElements(context, user, existingEntities);
       const entityIds = R.map((i) => i.standard_id, filteredEntities);
@@ -2945,14 +2968,17 @@ const createEntityRaw = async (context, user, rawInput, type, opts = {}) => {
       throw UnsupportedError('Cant upsert entity. Too many entities resolved', { input, entityIds });
     } else {
       // Create the object
+      logApp.info('createEntityRaw - ADDING FILE ?');
       dataEntity = await buildEntityData(context, user, resolvedInput, type, opts);
       // If file directly attached
       let additionalInputs;
       if (!isEmptyField(resolvedInput.file)) {
+        logApp.info('createEntityRaw - ADDING FILE:');
         const path = `import/${type}/${dataEntity.element[ID_INTERNAL]}`;
         const file_markings = resolvedInput.objectMarking?.map(({ id }) => id);
         const { upload: file } = await uploadToStorage(context, user, path, input.file, { entity: dataEntity.element, file_markings });
-        additionalInputs = { x_opencti_files: [storeFileConverter(user, file)] };
+        logApp.info('createEntityRaw - file:', { file });
+        additionalInputs = { x_opencti_files: [storeFileConverter(file)] };
         // Add external references from files if necessary
         if (entitySetting?.platform_entity_files_ref) {
           // Create external ref + link to current entity
