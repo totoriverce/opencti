@@ -15,6 +15,7 @@ export const MESSAGING$ = {
   messages: MESSENGER$,
   notifyError: (text) => MESSENGER$.next([{ type: 'error', text }]),
   notifySuccess: (text) => MESSENGER$.next([{ type: 'message', text }]),
+  notifyWarning: (text) => MESSENGER$.next([{ type: 'information', text }]),
   toggleNav: new Subject(),
   redirect: new Subject(),
 };

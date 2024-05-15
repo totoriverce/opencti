@@ -13,7 +13,9 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Tooltip from '@mui/material/Tooltip';
-import Dialog from '@mui/material/Dialog';
+import LinearProgress, { LinearProgressProps } from '@mui/material/LinearProgress';
+import { Dialog, MatDialog } from '@mui/material/Dialog'
+import Box from '@mui/material/Box';
 import List from '@mui/material/List';
 import ListItemText from '@mui/material/ListItemText';
 import makeStyles from '@mui/styles/makeStyles';
@@ -206,6 +208,29 @@ const stixCyberObservableMutation = graphql`
   }
 `;
 
+function LinearProgressWithLabel(props: LinearProgressProps & { value: number }) {
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+      <Box sx={{ width: '100%', mr: 1 }}>
+        <LinearProgress variant="determinate" {...props} />
+      </Box>
+      <Box sx={{ minWidth: 35 }}>
+        <Typography variant="body2" color="text.secondary">{`${Math.round(
+          props.value,
+        )}%`}</Typography>
+      </Box>
+    </Box>
+  );
+}
+
+const ProgressDialog = ({ loading, children, ...props }) => {
+  return (
+    <MatDialog {...props}>
+      {loading ? <LinearProgress></LinearProgress> : null}
+      {children}
+    </MatDialog>
+  )};
+
 const stixCyberObservableValidation = () => Yup.object().shape({
   x_opencti_score: Yup.number().nullable(),
   x_opencti_description: Yup.string().nullable(),
@@ -330,7 +355,6 @@ const StixCyberObservableCreation = ({
       if (values.file) {
         finalValues.file = values.file;
       }
-
       const error_array = [];
       let validObservables = 0;
       const commit = async () => {
@@ -389,6 +413,9 @@ const StixCyberObservableCreation = ({
             // consolidated_errors.res.errors[0].message = message_string + error_messages.join('\n');
             // Toast Error Message to Screen - Will not close the form since errors exist for correction.
             handleErrorInForm(consolidated_errors, setErrors);
+            if (valueList.length >= 50) {
+              MESSAGING$.notifyWarning(t_i18n('Adding more than 50 entries will take some time. Please consider using one of the other data import capabilities.'));
+            }
           } else {
             let bulk_success_message = `${validObservables}/${totalObservables} ${t_i18n('were added successfully.')}`;
             if (totalObservables === 1) {
@@ -398,6 +425,9 @@ const StixCyberObservableCreation = ({
             // Toast Message on Bulk Add Success
             MESSAGING$.notifySuccess(bulk_success_message);
             closeFormWithAnySuccess = true;
+          }
+          if (valueList.length >= 50) {
+            MESSAGING$.notifyWarning(t_i18n('Adding more than 50 entries will take some time. Please consider using one of the other data import capabilities.'));
           }
           // Close the form if any observables were successfully added.
           if (closeFormWithAnySuccess === true) {
@@ -424,6 +454,9 @@ const StixCyberObservableCreation = ({
             onCompleted: () => {
               // Toast Message on Add Success
               MESSAGING$.notifySuccess(t_i18n('Observable successfully added'));
+              if (valueList.length >= 50) {
+                MESSAGING$.notifyWarning(t_i18n('Adding more than 50 entries will take some time. Please consider using one of the other data import capabilities.'));
+              }
               setSubmitting(false);
               resetForm();
               localHandleClose();
@@ -562,11 +595,10 @@ const StixCyberObservableCreation = ({
       </React.Fragment>
     );
   }
-
   BulkAddModal.propTypes = {
     setValue: PropTypes.func,
   };
-
+  console.log('genericValueFieldDisabled ' + genericValueFieldDisabled);
   const renderForm = () => {
     return (
       <QueryRenderer
@@ -817,7 +849,10 @@ const StixCyberObservableCreation = ({
                       setFieldValue={setFieldValue}
                       values={values.externalReferences}
                     />
-                    <CustomFileUploader setFieldValue={setFieldValue} />
+                    <CustomFileUploader
+                      setFieldValue={setFieldValue}
+                      disabled={genericValueFieldDisabled}
+                    />
                     <Field
                       component={SwitchField}
                       type="checkbox"

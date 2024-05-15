@@ -22,7 +22,10 @@ interface CustomFileUploadProps {
   }
   acceptMimeTypes?: string; // html input "accept" with MIME types only
   sizeLimit?: number; // in bytes
+  disabled?: boolean;
 }
+
+console.log('In customFileUploader');
 
 // Deprecated - https://mui.com/system/styles/basics/
 // Do not use it for new code.
@@ -66,12 +69,14 @@ const CustomFileUploader: FunctionComponent<CustomFileUploadProps> = ({
   acceptMimeTypes,
   sizeLimit = 0, // defaults to 0 = no limit
   formikErrors,
+  disabled,
 }) => {
   const { t_i18n } = useFormatter();
   const classes = useStyles();
   const [fileNameForDisplay, setFileNameForDisplay] = useState('');
   const [errorText, setErrorText] = useState('');
-
+  const [fileUploadDisabled, setFileUploadDisabled] = useState(false);
+  console.log('In const customFileUploader');
   useEffect(() => {
     if (formikErrors?.file) {
       setErrorText(formikErrors?.file);
@@ -85,12 +90,19 @@ const CustomFileUploader: FunctionComponent<CustomFileUploadProps> = ({
     const eventTargetValue = inputElement.value as string;
     const file = inputElement.files?.[0];
     const fileSize = file?.size || 0;
-
+    console.log('In const onChange');
     const newFileName = eventTargetValue.substring(
       eventTargetValue.lastIndexOf('\\') + 1,
     );
     setFileNameForDisplay(truncate(newFileName, 60));
     setErrorText('');
+
+    if (disabled === true) {
+      setFileUploadDisabled(true);
+      console.log('disabled ' + disabled);
+    }
+
+    console.log('fileUploadDisabled ' + fileUploadDisabled);
 
     // check the file type; user might still provide something bypassing 'accept'
     // this will work only if accept is using MIME types only
@@ -137,6 +149,7 @@ const CustomFileUploader: FunctionComponent<CustomFileUploadProps> = ({
           variant="contained"
           onChange={onChange}
           className={classes.button}
+          disabled={fileUploadDisabled}
         >
           {t_i18n('Select your file')}
           <VisuallyHiddenInput type="file" accept={acceptMimeTypes} />
