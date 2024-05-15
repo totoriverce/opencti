@@ -7,6 +7,9 @@ import ListItemText from '@mui/material/ListItemText';
 import { Add } from '@mui/icons-material';
 import Skeleton from '@mui/material/Skeleton';
 import makeStyles from '@mui/styles/makeStyles';
+import { Button, styled } from '@mui/material';
+import { useFormatter } from '../../../../components/i18n';
+import useHelper from '../../../../utils/hooks/useHelper';
 import Drawer from '../../common/drawer/Drawer';
 import SearchInput from '../../../../components/SearchInput';
 import { QueryRenderer } from '../../../../relay/environment';
@@ -19,13 +22,21 @@ const useStyles = makeStyles({
     float: 'left',
     marginTop: -15,
   },
-  search: {
-    marginLeft: 'auto',
-    marginRight: ' 20px',
-  },
   container: {
     padding: 0,
   },
+});
+
+const StyledSearchHeader = styled('div')({
+  marginLeft: 'auto',
+  marginRight: '20px',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-end',
+});
+
+const CreateButtonWithMargin = styled(Button)({
+  marginTop: '5px',
 });
 
 const AddExternalReferences = ({
@@ -33,8 +44,12 @@ const AddExternalReferences = ({
   stixCoreObjectOrStixCoreRelationshipReferences,
 }) => {
   const classes = useStyles();
+  const { t_i18n } = useFormatter();
+  const { isFeatureEnable } = useHelper();
   const [open, setOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const FABReplaced = isFeatureEnable('FAB_REPLACEMENT');
 
   const handleOpen = () => {
     setOpen(true);
@@ -62,16 +77,26 @@ const AddExternalReferences = ({
         <Add fontSize="small" />
       </IconButton>
       <Drawer
-        title="Add external references"
+        title={t_i18n('Add external references')}
         open={open}
         onClose={handleClose}
         header={(
-          <div className={classes.search}>
+          <StyledSearchHeader>
             <SearchInput
               variant="inDrawer"
               onSubmit={handleSearch}
             />
-          </div>
+            {FABReplaced
+              && <CreateButtonWithMargin
+                onClick={() => setDialogOpen(true)}
+                color='primary'
+                size='small'
+                variant='contained'
+                 >
+                {t_i18n('Create')} {t_i18n('entity_External-Reference')} <Add />
+              </CreateButtonWithMargin>
+            }
+          </StyledSearchHeader>
         )}
       >
         <div className={classes.container}>
@@ -93,7 +118,9 @@ const AddExternalReferences = ({
                     }
                     data={props}
                     paginationOptions={paginationOptions}
-                    open={open}
+                    open={FABReplaced ? false : open}
+                    openContextual={dialogOpen}
+                    handleCloseContextual={FABReplaced ? () => setDialogOpen(false) : undefined}
                     search={search}
                   />
                 );
