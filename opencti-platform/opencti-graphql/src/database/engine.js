@@ -1728,16 +1728,8 @@ const buildLocalMustFilter = async (validFilter) => {
     if (arrayKeys.length > 1) {
       throw UnsupportedError('Filter must have only one field', { keys: arrayKeys });
     } else {
-      const schemaKey = schemaAttributesDefinition.getAttributeByName(R.head(arrayKeys));
-      valuesFiltering.push(schemaKey?.type === 'string' && schemaKey?.format === 'text' ? {
-        bool: {
-          must_not: {
-            wildcard: {
-              [R.head(arrayKeys)]: '*'
-            }
-          },
-        }
-      } : {
+      const filterDefinition = schemaAttributesDefinition.getAttributeByName(R.head(arrayKeys));
+      let valueFiltering = { // classic filters: field doesn't exist
         bool: {
           must_not: {
             exists: {
@@ -1745,27 +1737,118 @@ const buildLocalMustFilter = async (validFilter) => {
             }
           }
         }
-      });
+      };
+      if (filterDefinition?.type === 'string') {
+        if (filterDefinition?.format === 'text') { // text filters: use wildcard
+          valueFiltering = {
+            bool: {
+              must_not: {
+                wildcard: {
+                  [R.head(arrayKeys)]: '*'
+                }
+              },
+            }
+          };
+        } else { // string filters: nil <-> (field doesn't exist) OR (field = empty string)
+          valueFiltering = {
+            bool: {
+              should: [{
+                bool: {
+                  must_not: {
+                    exists: {
+                      field: R.head(arrayKeys)
+                    }
+                  }
+                }
+              }, {
+                multi_match: {
+                  fields: arrayKeys.map((k) => `${k === '_id' ? k : `${k}.keyword`}`),
+                  query: '',
+                },
+              }],
+              minimum_should_match: 1,
+            }
+          };
+        }
+      } else if (filterDefinition?.type === 'date') { // date filters: nil <-> (field doesn't exist) OR (date <= epoch) OR (date >= 5138)
+        valueFiltering = {
+          bool: {
+            should: [{
+              bool: {
+                must_not: {
+                  exists: {
+                    field: R.head(arrayKeys)
+                  }
+                }
+              }
+            },
+            { range: { [R.head(arrayKeys)]: { lte: '1970-01-01T01:00:00.000Z' } } },
+            { range: { [R.head(arrayKeys)]: { gte: '5138-11-16T09:46:40.000Z' } } }
+            ],
+            minimum_should_match: 1,
+          }
+        };
+      }
+      valuesFiltering.push(valueFiltering);
     }
   } else if (operator === 'not_nil') {
     if (arrayKeys.length > 1) {
       throw UnsupportedError('Filter must have only one field', { keys: arrayKeys });
     } else {
-      const schemaKey = schemaAttributesDefinition.getAttributeByName(R.head(arrayKeys));
-      valuesFiltering.push(schemaKey?.type === 'string' && schemaKey?.format === 'text' ? {
-        bool: {
-          must:
-            {
-              wildcard: {
-                [R.head(arrayKeys)]: '*'
-              }
-            },
-        }
-      } : {
+      const filterDefinition = schemaAttributesDefinition.getAttributeByName(R.head(arrayKeys));
+      let valueFiltering = { // classic filters: field exists
         exists: {
           field: R.head(arrayKeys)
         }
-      });
+      };
+      if (filterDefinition?.type === 'string') {
+        if (filterDefinition?.format === 'text') { // text filters: use wildcard
+          valueFiltering = {
+            bool: {
+              must: {
+                wildcard: {
+                  [R.head(arrayKeys)]: '*'
+                }
+              },
+            }
+          };
+        } else { // other filters: not_nil <-> (field exists) AND (field != empty string)
+          valueFiltering = {
+            bool: {
+              should: [{
+                exists: {
+                  field: R.head(arrayKeys)
+                }
+              }, {
+                bool: {
+                  must_not: {
+                    multi_match: {
+                      fields: arrayKeys.map((k) => `${k === '_id' ? k : `${k}.keyword`}`),
+                      query: '',
+                    },
+                  }
+                }
+              }],
+              minimum_should_match: 2,
+            }
+          };
+        }
+      } else if (filterDefinition?.type === 'date') { // date filters: not_nil <-> (field exists) AND (date > epoch) AND (date < 5138)
+        valueFiltering = {
+          bool: {
+            should: [{
+              exists: {
+                field: R.head(arrayKeys)
+              }
+            },
+            { range: { [R.head(arrayKeys)]: { gt: '1970-01-01T01:00:00.000Z' } } },
+            { range: { [R.head(arrayKeys)]: { lt: '5138-11-16T09:46:40.000Z' } } }
+            ],
+            minimum_should_match: 3,
+          }
+        };
+      }
+      valuesFiltering.push(valueFiltering);
     }
   }
   // 03. Handle values according to the operator
@@ -1847,7 +1930,7 @@ const buildLocalMustFilter = async (validFilter) => {
         if (arrayKeys.length > 1) {
           throw UnsupportedError('Filter must have only one field', { keys: arrayKeys });
         }
-        valuesFiltering.push({ range: { [R.head(arrayKeys)]: { [operator]: values[i] } } });
+        valuesFiltering.push({ range: { [R.head(arrayKeys)]: { [operator]: values[i] } } }); // range operators
       }
     }
   }
