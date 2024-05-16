@@ -157,6 +157,8 @@ const FreeTextUploader = ({ color, entityId, onUploadSuccess, size }: FreeTextUp
                 style={fieldSpacingContainerStyle}
                 onChange={() => {}}
                 setFieldValue={setFieldValue}
+                required={false}
+                // TODO: Required Fields - make dynamic
               />
             </DialogContent>
             <DialogActions>
