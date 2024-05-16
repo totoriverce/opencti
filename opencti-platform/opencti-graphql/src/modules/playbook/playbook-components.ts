@@ -30,7 +30,7 @@ import {
   INPUT_MARKINGS
 } from '../../schema/general';
 import { convertStoreToStix } from '../../database/stix-converter';
-import type { BasicStoreRelation, StoreCommon, StoreRelation } from '../../types/store';
+import type { BasicStoreCommon, BasicStoreRelation, StoreCommon, StoreRelation } from '../../types/store';
 import { generateInternalId, generateStandardId, idGenFromData } from '../../schema/identifier';
 import { now, observableValue, utcDate } from '../../utils/format';
 import type { StixCampaign, StixContainer, StixIncident, StixInfrastructure, StixMalware, StixReport, StixThreatActor } from '../../types/stix-sdo';
@@ -42,7 +42,7 @@ import { connectorsForPlaybook } from '../../database/repository';
 import { listAllEntities, listAllRelations, storeLoadById } from '../../database/middleware-loader';
 import type { BasicStoreEntityOrganization } from '../organization/organization-types';
 import { ENTITY_TYPE_IDENTITY_ORGANIZATION } from '../organization/organization-types';
-import { getEntitiesListFromCache } from '../../database/cache';
+import { getEntitiesListFromCache, getEntitiesMapFromCache } from '../../database/cache';
 import { createdBy, objectLabel, objectMarking } from '../../schema/stixRefRelationship';
 import { logApp } from '../../config/conf';
 import { FunctionalError } from '../../config/errors';
@@ -75,6 +75,8 @@ import { ENTITY_TYPE_CONTAINER_CASE_RFI } from '../case/case-rfi/case-rfi-types'
 import { ENTITY_TYPE_CONTAINER_CASE_RFT } from '../case/case-rft/case-rft-types';
 import { ENTITY_TYPE_CONTAINER_FEEDBACK } from '../case/feedback/feedback-types';
 import { ENTITY_TYPE_CONTAINER_TASK } from '../task/task-types';
+import { EditOperation } from '../../generated/graphql';
+import { ENTITY_TYPE_MARKING_DEFINITION } from '../../schema/stixMetaObject';
 
 const extractBundleBaseElement = (instanceId: string, bundle: StixBundle): StixObject => {
   const baseData = bundle.objects.find((o) => o.id === instanceId);
@@ -543,6 +545,8 @@ const PLAYBOOK_UPDATE_KNOWLEDGE_COMPONENT: PlaybookComponent<UpdateConfiguration
   configuration_schema: PLAYBOOK_UPDATE_KNOWLEDGE_COMPONENT_SCHEMA,
   schema: async () => PLAYBOOK_UPDATE_KNOWLEDGE_COMPONENT_SCHEMA,
   executor: async ({ dataInstanceId, playbookNode, bundle }) => {
+    const context = executionContext('playbook_components');
+    const cacheIds = await getEntitiesMapFromCache(context, AUTOMATION_MANAGER_USER, ENTITY_TYPE_MARKING_DEFINITION);
     const { actions, all } = playbookNode.configuration;
     // Compute if the attribute is defined as multiple in schema definition
     const isAttributeMultiple = (entityType:string, attribute: string) => {
@@ -553,10 +557,9 @@ const PLAYBOOK_UPDATE_KNOWLEDGE_COMPONENT: PlaybookComponent<UpdateConfiguration
       return undefined;
     };
     // Compute if attribute is defined as numeric
-    const isAttributeNumeric = (entityType:string, attribute: string) => {
+    const getAttributeType = (entityType:string, attribute: string) => {
       const baseAttribute = schemaAttributesDefinition.getAttribute(entityType, attribute);
-      if (baseAttribute) return baseAttribute.type === 'numeric';
-      return false;
+      return baseAttribute?.type ?? 'string';
     };
     // Compute the access path for the attribute in the static matrix
     const computeAttributePath = (entityType:string, attribute: string) => {
@@ -571,6 +574,11 @@ const PLAYBOOK_UPDATE_KNOWLEDGE_COMPONENT: PlaybookComponent<UpdateConfiguration
       }
       return undefined;
     };
+    const convertValue = (attributeType: string, value: any) => {
+      if (attributeType === 'numeric') return Number(value);
+      if (attributeType === 'boolean') return Boolean(value);
+      return value;
+    };
     const patchOperations = [];
     for (let index = 0; index < bundle.objects.length; index += 1) {
       const element = bundle.objects[index];
@@ -580,26 +588,42 @@ const PLAYBOOK_UPDATE_KNOWLEDGE_COMPONENT: PlaybookComponent<UpdateConfiguration
           .map((action) => {
             const attrPath = computeAttributePath(type, action.attribute);
             const multiple = isAttributeMultiple(type, action.attribute);
-            const numeric = isAttributeNumeric(type, action.attribute);
-            return ({ action, multiple, numeric, attrPath, path: `/objects/${index}${attrPath}` });
+            const attributeType = getAttributeType(type, action.attribute);
+            return ({ action, multiple, attributeType, attrPath, path: `/objects/${index}${attrPath}` });
           })
           // Unrecognized attributes must be filtered
           .filter(({ attrPath, multiple }) => isNotEmptyField(multiple) && isNotEmptyField(attrPath))
           // Map actions to data patches
-          .map(({ action, path, multiple, numeric }) => ({
-            op: action.op,
-            path,
-            // eslint-disable-next-line no-nested-ternary,max-len
-            value: multiple ? action.value.map((o) => (numeric ? Number(o.patch_value) : o.patch_value)) : numeric ? Number(R.head(action.value)?.patch_value) : R.head(action.value)?.patch_value
-          }));
+          .map(({ action, path, multiple, attributeType }) => {
+            if (multiple) {
+              const currentValues = jsonpatch.getValueByPointer(bundle, path) ?? [];
+              const actionValues = action.value.map((o) => {
+                // If value is an id, must be converted to standard_id has we work on stix bundle
+                if (cacheIds.has(o.patch_value)) return (cacheIds.get(o.patch_value) as BasicStoreCommon).standard_id;
+                // Else, just return the value
+                return convertValue(attributeType, o.patch_value);
+              });
+              if (action.op === EditOperation.Add) {
+                return { op: EditOperation.Replace, path, value: R.uniq([...currentValues, ...actionValues]) };
+              }
+              if (action.op === EditOperation.Replace) {
+                return { op: EditOperation.Replace, path, value: actionValues };
+              }
+              if (action.op === EditOperation.Remove) {
+                return { op: EditOperation.Replace, path, value: currentValues.filter((c: any) => !actionValues.includes(c)) };
+              }
+            }
+            const currentValue = R.head(action.value)?.patch_value;
+            return { op: action.op, path, value: convertValue(attributeType, currentValue) };
+          });
         // Enlist operations to execute
         patchOperations.push(...elementOperations);
       }
     }
     // Apply operations if needed
     if (patchOperations.length > 0) {
-      jsonpatch.applyPatch(bundle, patchOperations);
-      return { output_port: 'out', bundle };
+      const patchedBundle = jsonpatch.applyPatch(structuredClone(bundle), patchOperations).newDocument;
+      return { output_port: 'out', bundle: patchedBundle };
     }
     return { output_port: 'unmodified', bundle };
   }
@@ -892,6 +916,8 @@ const PLAYBOOK_CREATE_INDICATOR_COMPONENT: PlaybookComponent<CreateIndicatorConf
             pattern_type: STIX_PATTERN_TYPE,
             extensions: {
               [STIX_EXT_OCTI]: {
+                extension_type: 'property-extension',
+                type: ENTITY_TYPE_INDICATOR,
                 main_observable_type: type,
                 score,
               }
@@ -939,7 +965,10 @@ const PLAYBOOK_CREATE_INDICATOR_COMPONENT: PlaybookComponent<CreateIndicatorConf
             created: now(),
             modified: now(),
             extensions: {
-              [STIX_EXT_OCTI]: {}
+              [STIX_EXT_OCTI]: {
+                extension_type: 'property-extension',
+                type: RELATION_BASED_ON
+              }
             }
           } as StixRelation;
           if (granted_refs) {
@@ -1004,8 +1033,12 @@ const PLAYBOOK_CREATE_OBSERVABLE_COMPONENT: PlaybookComponent<CreateObservableCo
             x_opencti_score: score,
             x_opencti_description: description,
             extensions: {
-              [STIX_EXT_OCTI]: {},
+              [STIX_EXT_OCTI]: {
+                extension_type: 'property-extension',
+                type: observable.type,
+              },
               [STIX_EXT_OCTI_SCO]: {
+                extension_type: 'property-extension',
                 score,
                 description,
               }
@@ -1053,7 +1086,10 @@ const PLAYBOOK_CREATE_OBSERVABLE_COMPONENT: PlaybookComponent<CreateObservableCo
             created: now(),
             modified: now(),
             extensions: {
-              [STIX_EXT_OCTI]: {}
+              [STIX_EXT_OCTI]: {
+                extension_type: 'property-extension',
+                type: RELATION_BASED_ON
+              }
             }
           } as StixRelation;
           if (granted_refs) {
