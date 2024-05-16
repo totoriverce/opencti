@@ -26,6 +26,7 @@ import DateTimePickerField from '../../../../components/DateTimePickerField';
 import useQueryLoading from '../../../../utils/hooks/useQueryLoading';
 import Loader, { LoaderVariant } from '../../../../components/Loader';
 import useApiMutation from '../../../../utils/hooks/useApiMutation';
+import { useSchemaCreationValidation, useMandatorySchemaAttributes } from '../../../../utils/hooks/useSchemaAttributes';
 
 // Deprecated - https://mui.com/system/styles/basics/
 // Do not use it for new code.
@@ -67,30 +68,37 @@ export interface IngestionCsvCreationForm {
   ca?: string
 }
 
+const OBJECT_TYPE = 'IngestionCsv';
+
 const IngestionCsvCreation: FunctionComponent<IngestionCsvCreationProps> = ({ paginationOptions }) => {
   const { t_i18n } = useFormatter();
-  const classes = useStyles();
-  const [open, setOpen] = useState(false);
-  const [isCreateDisabled, setIsCreateDisabled] = useState(true);
 
-  const ingestionCsvCreationValidation = () => Yup.object().shape({
-    name: Yup.string().trim().min(2).required(t_i18n('This field is required')),
+  const basicShape = {
+    name: Yup.string().trim().min(2),
     description: Yup.string().nullable(),
-    uri: Yup.string().required(t_i18n('This field is required')),
-    authentication_type: Yup.string().required(t_i18n('This field is required')),
+    uri: Yup.string(),
+    authentication_type: Yup.string(),
     authentication_value: Yup.string().nullable(),
     current_state_date: Yup.date()
       .typeError(t_i18n('The value must be a datetime (yyyy-MM-dd hh:mm (a|p)m)'))
       .nullable(),
-    csv_mapper_id: Yup.object().required(t_i18n('This field is required')),
+    csv_mapper_id: Yup.object(),
     username: Yup.string().nullable(),
     password: Yup.string().nullable(),
     cert: Yup.string().nullable(),
     key: Yup.string().nullable(),
     ca: Yup.string().nullable(),
     user_id: Yup.object().nullable(),
-  });
+  };
+  const mandatoryAttributes = useMandatorySchemaAttributes(OBJECT_TYPE);
+  const validator = useSchemaCreationValidation(
+    OBJECT_TYPE,
+    basicShape,
+  );
 
+  const classes = useStyles();
+  const [open, setOpen] = useState(false);
+  const [isCreateDisabled, setIsCreateDisabled] = useState(true);
   const [commit] = useApiMutation(ingestionCsvCreationMutation);
   const onSubmit: FormikConfig<IngestionCsvCreationForm>['onSubmit'] = (
     values,
@@ -156,7 +164,7 @@ const IngestionCsvCreation: FunctionComponent<IngestionCsvCreationProps> = ({ pa
             key: '',
             ca: '',
           }}
-          validationSchema={ingestionCsvCreationValidation}
+          validationSchema={validator}
           onSubmit={onSubmit}
           onReset={onClose}
         >
@@ -167,6 +175,7 @@ const IngestionCsvCreation: FunctionComponent<IngestionCsvCreationProps> = ({ pa
                 variant="standard"
                 name="name"
                 label={t_i18n('Name')}
+                required={(mandatoryAttributes.includes('name'))}
                 fullWidth={true}
               />
               <Field
@@ -174,6 +183,7 @@ const IngestionCsvCreation: FunctionComponent<IngestionCsvCreationProps> = ({ pa
                 variant="standard"
                 name="description"
                 label={t_i18n('Description')}
+                required={(mandatoryAttributes.includes('description'))}
                 fullWidth={true}
                 style={fieldSpacingContainerStyle}
               />
@@ -186,12 +196,14 @@ const IngestionCsvCreation: FunctionComponent<IngestionCsvCreationProps> = ({ pa
                   fullWidth: true,
                   style: fieldSpacingContainerStyle,
                 }}
+                required={(mandatoryAttributes.includes('current_state_date'))}
               />
               <Field
                 component={TextField}
                 variant="standard"
                 name="uri"
                 label={t_i18n('CSV URL')}
+                required={(mandatoryAttributes.includes('uri'))}
                 fullWidth={true}
                 style={fieldSpacingContainerStyle}
               />
@@ -200,6 +212,7 @@ const IngestionCsvCreation: FunctionComponent<IngestionCsvCreationProps> = ({ pa
                   <React.Suspense fallback={<Loader variant={LoaderVariant.inElement} />}>
                     <CsvMapperField
                       name="csv_mapper_id"
+                      required={(mandatoryAttributes.includes('csv_mapper_id'))}
                       isOptionEqualToValue={(option: Option, { value }: Option) => option.value === value}
                       queryRef={queryRef}
                     />
@@ -211,6 +224,7 @@ const IngestionCsvCreation: FunctionComponent<IngestionCsvCreationProps> = ({ pa
                 variant="standard"
                 name="authentication_type"
                 label={t_i18n('Authentication type')}
+                required={(mandatoryAttributes.includes('authentication_type'))}
                 fullWidth={true}
                 containerstyle={{
                   width: '100%',
@@ -233,6 +247,7 @@ const IngestionCsvCreation: FunctionComponent<IngestionCsvCreationProps> = ({ pa
                     variant="standard"
                     name="username"
                     label={t_i18n('Username')}
+                    required={(mandatoryAttributes.includes('username'))}
                     fullWidth={true}
                     style={fieldSpacingContainerStyle}
                   />
@@ -241,6 +256,7 @@ const IngestionCsvCreation: FunctionComponent<IngestionCsvCreationProps> = ({ pa
                     variant="standard"
                     name="password"
                     label={t_i18n('Password')}
+                    required={(mandatoryAttributes.includes('password'))}
                     fullWidth={true}
                     style={fieldSpacingContainerStyle}
                   />
@@ -252,6 +268,7 @@ const IngestionCsvCreation: FunctionComponent<IngestionCsvCreationProps> = ({ pa
                   variant="standard"
                   name="authentication_value"
                   label={t_i18n('Token')}
+                  required={(mandatoryAttributes.includes('authentication_value'))}
                   fullWidth={true}
                   style={fieldSpacingContainerStyle}
                 />
@@ -263,6 +280,7 @@ const IngestionCsvCreation: FunctionComponent<IngestionCsvCreationProps> = ({ pa
                     variant="standard"
                     name="cert"
                     label={t_i18n('Certificate (base64)')}
+                    required={(mandatoryAttributes.includes('cert'))}
                     fullWidth={true}
                     style={fieldSpacingContainerStyle}
                   />
@@ -271,6 +289,7 @@ const IngestionCsvCreation: FunctionComponent<IngestionCsvCreationProps> = ({ pa
                     variant="standard"
                     name="key"
                     label={t_i18n('Key (base64)')}
+                    required={(mandatoryAttributes.includes('key'))}
                     fullWidth={true}
                     style={fieldSpacingContainerStyle}
                   />
@@ -279,6 +298,7 @@ const IngestionCsvCreation: FunctionComponent<IngestionCsvCreationProps> = ({ pa
                     variant="standard"
                     name="ca"
                     label={t_i18n('CA certificate (base64)')}
+                    required={(mandatoryAttributes.includes('ca'))}
                     fullWidth={true}
                     style={fieldSpacingContainerStyle}
                   />
@@ -289,6 +309,7 @@ const IngestionCsvCreation: FunctionComponent<IngestionCsvCreationProps> = ({ pa
                 label={t_i18n(
                   'User responsible for data creation (empty = System)',
                 )}
+                required={(mandatoryAttributes.includes('user_id'))}
                 isOptionEqualToValue={(option: Option, value: string) => option.value === value}
                 containerStyle={fieldSpacingContainerStyle}
               />
